@@ -9,8 +9,9 @@ from keepassxc_cli.config import CliConfig
 from keepassxc_cli.output import print_entries, print_groups
 
 
-def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("ls", help="List database entries or groups")
+def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
+    parents = [fmt_parent] if fmt_parent else []
+    p = subparsers.add_parser("ls", parents=parents, help="List database entries or groups")
     p.add_argument("--groups", action="store_true", help="List groups instead of entries")
     p.set_defaults(func=run)
 

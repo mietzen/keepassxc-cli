@@ -49,14 +49,6 @@ def print_entries(entries: list[Entry], fmt: str = "table", show_password: bool 
         print(json.dumps(data, indent=2))
         return
 
-    if fmt == "tsv":
-        headers = ["UUID", "Title", "Username", "URL", "Group"]
-        print("\t".join(headers))
-        for e in entries:
-            url = next((sf.get("KPH: url", "") for sf in e.string_fields if "KPH: url" in sf), "")
-            print("\t".join([e.uuid, e.name, e.login, url, e.group]))
-        return
-
     # table
     headers = ["UUID", "Title", "Username", "URL", "Group"]
     rows = []
@@ -80,50 +72,34 @@ def print_groups(groups: list[Group], fmt: str = "table") -> None:
         print(json.dumps([_g2d(g) for g in groups], indent=2))
         return
 
-    if fmt == "tsv":
-        print("UUID\tName")
-        for g in groups:
-            for flat in g.flat_list():
-                print(f"{flat.uuid}\t{flat.name}")
-        return
-
     for g in groups:
         _print_group_tree(g)
 
 
 def print_entry_detail(entry: Entry, fmt: str = "table", show_password: bool = False) -> None:
     password = entry.password if show_password else "***"
+    totp = entry.totp if show_password else None
     if fmt == "json":
         data = {
             "uuid": entry.uuid,
             "name": entry.name,
             "login": entry.login,
             "password": password,
-            "totp": entry.totp,
             "group": entry.group,
             "group_uuid": entry.group_uuid,
             "string_fields": entry.string_fields,
         }
+        if totp is not None:
+            data["totp"] = totp
         print(json.dumps(data, indent=2))
-        return
-
-    if fmt == "tsv":
-        print("Field\tValue")
-        print(f"UUID\t{entry.uuid}")
-        print(f"Title\t{entry.name}")
-        print(f"Username\t{entry.login}")
-        print(f"Password\t{password}")
-        print(f"TOTP\t{entry.totp}")
-        print(f"Group\t{entry.group}")
-        print(f"Group UUID\t{entry.group_uuid}")
         return
 
     print(f"UUID:       {entry.uuid}")
     print(f"Title:      {entry.name}")
     print(f"Username:   {entry.login}")
     print(f"Password:   {password}")
-    if entry.totp:
-        print(f"TOTP:       {entry.totp}")
+    if totp:
+        print(f"TOTP:       {totp}")
     if entry.group:
         print(f"Group:      {entry.group}")
     if entry.group_uuid:
@@ -138,9 +114,6 @@ def print_totp(totp: str, fmt: str = "table") -> None:
     if fmt == "json":
         print(json.dumps({"totp": totp}, indent=2))
         return
-    if fmt == "tsv":
-        print(f"TOTP\t{totp}")
-        return
     print(totp)
 
 
@@ -148,20 +121,12 @@ def print_password(password: str, fmt: str = "table") -> None:
     if fmt == "json":
         print(json.dumps({"password": password}, indent=2))
         return
-    if fmt == "tsv":
-        print(f"Password\t{password}")
-        return
     print(password)
 
 
 def print_status(info: dict, fmt: str = "table") -> None:
     if fmt == "json":
         print(json.dumps(info, indent=2))
-        return
-    if fmt == "tsv":
-        print("Key\tValue")
-        for k, v in info.items():
-            print(f"{k}\t{v}")
         return
     for k, v in info.items():
         print(f"{k}: {v}")

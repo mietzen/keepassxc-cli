@@ -10,9 +10,11 @@ from keepassxc_cli.config import CliConfig
 from keepassxc_cli.output import print_password
 
 
-def add_parser(subparsers: argparse._SubParsersAction) -> None:
+def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
+    parents = [fmt_parent] if fmt_parent else []
     p = subparsers.add_parser(
         "generate",
+        parents=parents,
         help="Generate a password using KeePassXC's configured password profile",
     )
     p.add_argument("--clip", action="store_true", help="Copy to clipboard instead of printing")
