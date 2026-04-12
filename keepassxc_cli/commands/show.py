@@ -1,0 +1,37 @@
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from keepassxc_browser_api import BrowserClient, BrowserConfig
+
+from keepassxc_cli.config import CliConfig
+from keepassxc_cli.output import print_entry_detail
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser("show", help="Show entries matching a URL")
+    p.add_argument("url", help="URL or search string")
+    p.add_argument("-p", "--show-password", action="store_true", help="Reveal password")
+    p.set_defaults(func=run)
+
+
+def run(
+    client: BrowserClient,
+    args: argparse.Namespace,
+    cli_config: CliConfig,
+    browser_config: BrowserConfig,
+    browser_config_path: Path,
+    *,
+    fmt: str = "table",
+) -> int:
+    entries = client.get_logins(args.url)
+    if not entries:
+        print(f"No entries found for: {args.url}", file=sys.stderr)
+        return 1
+    for entry in entries:
+        print_entry_detail(entry, fmt, show_password=args.show_password)
+        if fmt == "table" and len(entries) > 1:
+            print()
+    return 0
