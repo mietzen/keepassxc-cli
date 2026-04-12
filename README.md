@@ -74,10 +74,12 @@ keepassxc-cli status
 #### `ls` — List entries or groups
 
 ```bash
-keepassxc-cli ls                # list all entries
+keepassxc-cli ls                # list all entries (includes UUID column)
 keepassxc-cli ls --groups       # list groups (tree view)
 keepassxc-cli ls --format json  # output as JSON
 ```
+
+UUIDs shown in the output are needed for `edit`, `rm`, `totp`, and `clip --field totp`.
 
 #### `search` — Search entries
 
@@ -104,6 +106,8 @@ keepassxc-cli add --url https://example.com --username user --password mypass
 ```
 
 #### `edit` — Edit an entry
+
+> **Finding a UUID**: Use `keepassxc-cli ls` or `keepassxc-cli search <query>` to list entries with their UUIDs.
 
 ```bash
 keepassxc-cli edit <uuid> --username newuser
