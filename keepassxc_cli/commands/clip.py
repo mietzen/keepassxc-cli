@@ -49,7 +49,7 @@ def run(
     elif args.field == "totp":
         value = client.get_totp(entry.uuid)
         if value is None:
-            print(f"No TOTP for entry: {entry.uuid}", file=sys.stderr)
+            print(f"No TOTP configured for: {entry.name}", file=sys.stderr)
             return 1
     else:
         print(f"Unknown field: {args.field}", file=sys.stderr)
