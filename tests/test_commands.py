@@ -10,7 +10,7 @@ import pytest
 from keepassxc_browser_api import Entry, Group, BrowserConfig, Association
 from keepassxc_cli.config import CliConfig
 from keepassxc_cli.commands import (
-    setup, status, show, search, ls, add, edit, rm, totp, clip, generate, lock, mkdir,
+    setup, status, show, add, edit, rm, totp, clip, lock, mkdir,
 )
 
 
@@ -33,16 +33,13 @@ def make_args(**kwargs) -> argparse.Namespace:
     defaults = {
         "show_password": False,
         "yes": False,
-        "groups": False,
         "field": "password",
-        "clip": False,
         "url": "https://example.com",
         "username": "user",
         "password": "pass",
         "title": "Example",
         "group_uuid": "",
         "uuid": "abcdef12-0000-0000-0000-000000000000",
-        "query": "test",
         "name": "NewGroup",
         "parent_uuid": "",
     }
@@ -109,6 +106,17 @@ class TestShowCommand:
         assert rc == 0
         out = capsys.readouterr().out
         assert "Test Entry" in out
+        assert "Password" not in out
+
+    def test_found_entries_show_password(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry()
+        mock_client.get_logins.return_value = [entry]
+        args = make_args(url="https://example.com", show_password=True)
+        rc = show.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Test Entry" in out
+        assert "Password:" in out
 
     def test_no_entries(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.get_logins.return_value = []
@@ -116,43 +124,6 @@ class TestShowCommand:
         rc = show.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
         assert "No entries" in capsys.readouterr().err
-
-
-# --- search ---
-
-class TestSearchCommand:
-    def test_matches_found(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
-        entry = mock_entry(name="GitHub", login="user@github.com")
-        mock_client.get_logins.return_value = [entry]
-        args = make_args(query="github.com")
-        rc = search.run(mock_client, args, cli_config, browser_config, browser_config_path)
-        assert rc == 0
-        assert "GitHub" in capsys.readouterr().out
-
-    def test_no_matches(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
-        mock_client.get_logins.return_value = []
-        args = make_args(query="zzznomatch.com")
-        rc = search.run(mock_client, args, cli_config, browser_config, browser_config_path)
-        assert rc == 1
-        assert "No entries" in capsys.readouterr().err
-
-
-# --- ls ---
-
-class TestLsCommand:
-    def test_list_entries(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
-        mock_client.get_database_entries.return_value = [mock_entry()]
-        args = make_args(groups=False)
-        rc = ls.run(mock_client, args, cli_config, browser_config, browser_config_path)
-        assert rc == 0
-        assert "Test Entry" in capsys.readouterr().out
-
-    def test_list_groups(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
-        mock_client.get_database_groups.return_value = [mock_group()]
-        args = make_args(groups=True)
-        rc = ls.run(mock_client, args, cli_config, browser_config, browser_config_path)
-        assert rc == 0
-        assert "Root" in capsys.readouterr().out
 
 
 # --- add ---
@@ -263,30 +234,6 @@ class TestClipCommand:
             rc = clip.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
         assert "pyperclip" in capsys.readouterr().err
-
-
-# --- generate ---
-
-class TestGenerateCommand:
-    def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
-        mock_client.generate_password.return_value = "GenPass123!"
-        args = make_args(clip=False)
-        rc = generate.run(mock_client, args, cli_config, browser_config, browser_config_path)
-        assert rc == 0
-        assert "GenPass123!" in capsys.readouterr().out
-
-    def test_failure(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
-        mock_client.generate_password.return_value = None
-        args = make_args(clip=False)
-        rc = generate.run(mock_client, args, cli_config, browser_config, browser_config_path)
-        assert rc == 1
-
-    def test_clip(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
-        mock_client.generate_password.return_value = "GenPass123!"
-        args = make_args(clip=True)
-        with patch.dict("sys.modules", {"pyperclip": MagicMock()}):
-            rc = generate.run(mock_client, args, cli_config, browser_config, browser_config_path)
-        assert rc == 0
 
 
 # --- lock ---

@@ -4,7 +4,7 @@ This document provides context for AI assistants working on this project.
 
 ## Project Purpose
 
-`keepassxc-cli` is a Python command-line tool that communicates with a running KeePassXC instance using the KeePassXC Browser Extension protocol (native messaging over a Unix socket). It enables terminal users to interact with KeePassXC — listing, searching, adding, editing, and deleting entries — while leveraging KeePassXC's biometric (TouchID/fingerprint) unlock support.
+`keepassxc-cli` is a Python command-line tool that communicates with a running KeePassXC instance using the KeePassXC Browser Extension protocol (native messaging over a Unix socket). It enables terminal users to interact with KeePassXC — adding, editing, and deleting entries — while leveraging KeePassXC's biometric (TouchID/fingerprint) unlock support.
 
 ## Package Structure
 
@@ -13,20 +13,17 @@ keepassxc_cli/
 ├── __init__.py          # empty (just from __future__ import annotations)
 ├── __main__.py          # CLI entry point; argument parsing; dispatches to commands
 ├── config.py            # CliConfig dataclass; save/load ~/.keepassxc/cli.json
-├── output.py            # Output formatting: table, json, tsv
+├── output.py            # Output formatting: table, json
 └── commands/
     ├── __init__.py      # empty
     ├── setup.py         # associate with KeePassXC
     ├── status.py        # show connection/association status
     ├── show.py          # show entries by URL
-    ├── search.py        # search all entries
-    ├── ls.py            # list entries or groups
     ├── add.py           # add new entry
     ├── edit.py          # edit existing entry by UUID
     ├── rm.py            # delete entry by UUID
     ├── totp.py          # get TOTP code
     ├── clip.py          # copy field to clipboard
-    ├── generate.py      # generate password
     ├── lock.py          # lock database
     └── mkdir.py         # create group
 
@@ -103,6 +100,7 @@ ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 - **Config permissions**: Config files are written with `0o600` (owner read/write only).
 - **Venv**: Always use `.venv` for development.
 - **Python ≥ 3.10** required.
+- **Password visibility**: `show` omits password and TOTP entirely when `-p` is not passed (no masking).
 
 ## Config Files
 
@@ -113,4 +111,4 @@ ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 
 ## Output Formats
 
-Three formats are supported everywhere: `table` (default), `json`, `tsv`. The `--format` global flag or `default_format` in `cli.json` controls the default.
+Two formats are supported: `table` (default) and `json`. The `-j / --json` flag on individual subcommands or `default_format` in `cli.json` controls the default.

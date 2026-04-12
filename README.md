@@ -8,7 +8,7 @@ A command-line interface for [KeePassXC](https://keepassxc.org/) that communicat
 
 - **Biometric unlock**: On macOS with TouchID (or similar) configured in KeePassXC, you can authenticate via fingerprint rather than typing your master password.
 - **No master password in shell history**: Authentication happens through KeePassXC's GUI, not the terminal.
-- **Full CRUD**: List, search, add, edit, delete entries and groups.
+- **CRUD**: Add, edit, delete entries and groups.
 - **TOTP**: Retrieve time-based one-time passwords.
 - **Clipboard**: Copy credentials directly to the clipboard.
 
@@ -56,11 +56,11 @@ keepassxc-cli [--config PATH] [--browser-api-config PATH] [-v] COMMAND [COMMAND 
 | `--browser-api-config` | Path to browser API config file (default: `~/.keepassxc/browser-api.json`) |
 | `-v, --verbose` | Enable verbose/debug logging |
 
-Most commands support a `-j / --json` flag for JSON output — pass it anywhere after the subcommand name:
+Some commands support a `-j / --json` flag for JSON output — pass it anywhere after the subcommand name:
 
 ```bash
 keepassxc-cli show https://github.com -j
-keepassxc-cli ls -j
+keepassxc-cli status -j
 ```
 
 ### Commands
@@ -78,29 +78,6 @@ keepassxc-cli status
 keepassxc-cli status -j
 ```
 
-#### `ls` — List all entries or groups
-
-> **Requires** "Allow access to all entries" to be enabled in  
-> KeePassXC → Settings → Browser Integration.
-
-```bash
-keepassxc-cli ls              # list all entries (includes UUID column)
-keepassxc-cli ls --groups     # list groups as a tree
-keepassxc-cli ls -j           # output as JSON
-```
-
-The UUIDs shown here are needed for `edit` and `rm`.
-
-#### `search` — Search entries by URL or hostname
-
-```bash
-keepassxc-cli search github.com
-keepassxc-cli search https://github.com -p   # reveal passwords
-keepassxc-cli search github.com -j
-```
-
-KeePassXC matches entries by URL/hostname (the same mechanism the browser extension uses).
-
 #### `show` — Show entries for a URL
 
 ```bash
@@ -108,6 +85,8 @@ keepassxc-cli show https://github.com
 keepassxc-cli show https://github.com -p     # reveal password and TOTP
 keepassxc-cli show https://github.com -j
 ```
+
+Without `-p`, password and TOTP are omitted from the output entirely.
 
 #### `totp` — Get TOTP code
 
@@ -136,7 +115,7 @@ keepassxc-cli add --url https://example.com --username user --password mypass
 
 ```bash
 # Get the UUID first
-keepassxc-cli show https://github.com
+keepassxc-cli show https://github.com -p
 
 # Then edit — --url is required to resolve the current entry
 keepassxc-cli edit <uuid> --url https://github.com --username newuser
@@ -149,16 +128,6 @@ keepassxc-cli edit <uuid> --url https://github.com --password newpass --title "N
 keepassxc-cli rm <uuid>        # prompts for confirmation
 keepassxc-cli rm <uuid> --yes  # skip confirmation
 ```
-
-#### `generate` — Generate a password
-
-```bash
-keepassxc-cli generate             # prints a password
-keepassxc-cli generate --clip      # copy to clipboard instead
-keepassxc-cli generate -j
-```
-
-KeePassXC uses its own configured password generator profile (set in KeePassXC → Tools → Password Generator).
 
 #### `lock` — Lock the database
 
@@ -222,7 +191,7 @@ ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 ## Known Limitations
 
 - Requires KeePassXC to be **running** and the database to be **open** (or biometric auto-unlock configured).
-- The `ls` command requires "Allow access to all entries" to be enabled in KeePassXC → Settings → Browser Integration.
-- The `clip` and `generate --clip` commands require `pyperclip` and a working clipboard (e.g., `xclip`/`xsel` on Linux, built-in on macOS/Windows).
+- The `clip` command requires `pyperclip` and a working clipboard (e.g., `xclip`/`xsel` on Linux, built-in on macOS/Windows).
 - The browser integration protocol does not support moving entries between groups directly.
-- Entry URLs in the database are stored as `KPH: url` string fields; entries without a URL field may not appear in `show`/`search` results.
+- Entry lookup is by URL/hostname only (same as the browser extension). Title-based search is not supported by the protocol.
+- **String fields** (`string_fields` in JSON output) require the KeePassXC setting "Support KPH fields" to be enabled, and custom attributes must be prefixed with `KPH: ` in the KeePassXC entry's "Advanced" tab. This is a server-side KeePassXC requirement, not something the CLI can control.
