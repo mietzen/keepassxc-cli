@@ -123,16 +123,15 @@ class TestShowCommand:
 class TestSearchCommand:
     def test_matches_found(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
         entry = mock_entry(name="GitHub", login="user@github.com")
-        mock_client.get_database_entries.return_value = [entry]
-        args = make_args(query="github")
+        mock_client.get_logins.return_value = [entry]
+        args = make_args(query="github.com")
         rc = search.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         assert "GitHub" in capsys.readouterr().out
 
-    def test_no_matches(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
-        entry = mock_entry(name="GitHub")
-        mock_client.get_database_entries.return_value = [entry]
-        args = make_args(query="zzznomatch")
+    def test_no_matches(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        mock_client.get_logins.return_value = []
+        args = make_args(query="zzznomatch.com")
         rc = search.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
         assert "No entries" in capsys.readouterr().err
@@ -179,16 +178,16 @@ class TestAddCommand:
 class TestEditCommand:
     def test_entry_found_and_updated(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
         entry = mock_entry()
-        mock_client.get_database_entries.return_value = [entry]
+        mock_client.get_logins.return_value = [entry]
         mock_client.set_login.return_value = True
-        args = make_args(uuid=entry.uuid, url=None, username="newuser", password=None, title=None)
+        args = make_args(uuid=entry.uuid, url="https://example.com", username="newuser", password=None, title=None)
         rc = edit.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         assert "updated" in capsys.readouterr().out.lower()
 
     def test_entry_not_found(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
-        mock_client.get_database_entries.return_value = []
-        args = make_args(uuid="nonexistent-uuid", url=None, username=None, password=None, title=None)
+        mock_client.get_logins.return_value = []
+        args = make_args(uuid="nonexistent-uuid", url="https://example.com", username=None, password=None, title=None)
         rc = edit.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
         assert "not found" in capsys.readouterr().err.lower()
@@ -215,16 +214,26 @@ class TestRmCommand:
 # --- totp ---
 
 class TestTotpCommand:
-    def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+    def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry()
+        mock_client.get_logins.return_value = [entry]
         mock_client.get_totp.return_value = "654321"
-        args = make_args(uuid="some-uuid")
+        args = make_args(url="https://example.com")
         rc = totp.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         assert "654321" in capsys.readouterr().out
 
-    def test_no_totp(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+    def test_no_entries(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        mock_client.get_logins.return_value = []
+        args = make_args(url="https://example.com")
+        rc = totp.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+
+    def test_no_totp(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry()
+        mock_client.get_logins.return_value = [entry]
         mock_client.get_totp.return_value = None
-        args = make_args(uuid="some-uuid")
+        args = make_args(url="https://example.com")
         rc = totp.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
 

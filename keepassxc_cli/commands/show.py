@@ -10,10 +10,11 @@ from keepassxc_cli.config import CliConfig
 from keepassxc_cli.output import print_entry_detail
 
 
-def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("show", help="Show entries matching a URL")
+def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
+    parents = [fmt_parent] if fmt_parent else []
+    p = subparsers.add_parser("show", parents=parents, help="Show entries matching a URL")
     p.add_argument("url", help="URL or search string")
-    p.add_argument("-p", "--show-password", action="store_true", help="Reveal password")
+    p.add_argument("-p", "--show-password", action="store_true", help="Reveal password and TOTP")
     p.set_defaults(func=run)
 
 

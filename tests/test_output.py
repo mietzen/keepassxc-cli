@@ -59,14 +59,6 @@ class TestPrintEntries:
         data = json.loads(out)
         assert data[0]["password"] == "s3cr3t"
 
-    def test_tsv_format(self, capsys, sample_entry):
-        print_entries([sample_entry], fmt="tsv")
-        out = capsys.readouterr().out
-        lines = out.strip().split("\n")
-        assert lines[0] == "UUID\tTitle\tUsername\tURL\tGroup"
-        assert "GitHub" in lines[1]
-        assert "user@example.com" in lines[1]
-
     def test_table_format_multiple_entries(self, capsys, sample_entry):
         entries = [sample_entry, sample_entry]
         print_entries(entries, fmt="table")
@@ -87,13 +79,6 @@ class TestPrintGroups:
         data = json.loads(out)
         assert data[0]["name"] == "Root"
         assert data[0]["children"][0]["name"] == "Personal"
-
-    def test_tsv_format(self, capsys, sample_group):
-        # flat_list must work; the Group dataclass has flat_list method
-        print_groups([sample_group], fmt="tsv")
-        out = capsys.readouterr().out
-        lines = out.strip().split("\n")
-        assert lines[0] == "UUID\tName"
 
 
 class TestPrintEntryDetail:
@@ -116,11 +101,6 @@ class TestPrintEntryDetail:
         assert data["name"] == "GitHub"
         assert data["password"] == "s3cr3t"
 
-    def test_tsv_format(self, capsys, sample_entry):
-        print_entry_detail(sample_entry, fmt="tsv")
-        out = capsys.readouterr().out
-        assert "Title\tGitHub" in out
-
 
 class TestPrintTotp:
     def test_table_format(self, capsys):
@@ -131,10 +111,6 @@ class TestPrintTotp:
         print_totp("123456", fmt="json")
         data = json.loads(capsys.readouterr().out)
         assert data["totp"] == "123456"
-
-    def test_tsv_format(self, capsys):
-        print_totp("123456", fmt="tsv")
-        assert "TOTP\t123456" in capsys.readouterr().out
 
 
 class TestPrintPassword:

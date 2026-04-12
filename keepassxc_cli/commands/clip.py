@@ -11,13 +11,12 @@ from keepassxc_cli.config import CliConfig
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser("clip", help="Copy a field to clipboard")
-    p.add_argument("url", help="URL to look up")
     p.add_argument(
-        "--field",
+        "field",
         choices=["password", "username", "totp"],
-        default="password",
-        help="Field to copy (default: password)",
+        help="Field to copy: password, username, or totp",
     )
+    p.add_argument("url", help="URL to look up")
     p.set_defaults(func=run)
 
 
@@ -50,7 +49,7 @@ def run(
     elif args.field == "totp":
         value = client.get_totp(entry.uuid)
         if value is None:
-            print(f"No TOTP for entry: {entry.uuid}", file=sys.stderr)
+            print(f"No TOTP configured for: {entry.name}", file=sys.stderr)
             return 1
     else:
         print(f"Unknown field: {args.field}", file=sys.stderr)

@@ -13,6 +13,17 @@ from keepassxc_browser_api.exceptions import KeePassXCError, ConnectionError
 from .config import CliConfig, DEFAULT_CLI_CONFIG_PATH
 from .commands import setup, status, show, search, ls, add, edit, rm, totp, clip, generate, lock, mkdir
 
+# Shared parent parser that injects -j/--json into each subparser that supports it.
+# Defined at module level so command modules can import it if needed.
+fmt_parent = argparse.ArgumentParser(add_help=False)
+fmt_parent.add_argument(
+    "-j", "--json",
+    action="store_true",
+    dest="json_output",
+    default=False,
+    help="Output as JSON",
+)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -29,29 +40,22 @@ def main() -> None:
         default=None,
         help="Path to browser API config file",
     )
-    parser.add_argument(
-        "--format",
-        choices=["table", "json", "tsv"],
-        default=None,
-        dest="fmt",
-        help="Output format (default: table)",
-    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
 
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
     subparsers.required = True
 
     setup.add_parser(subparsers)
-    status.add_parser(subparsers)
-    show.add_parser(subparsers)
-    search.add_parser(subparsers)
-    ls.add_parser(subparsers)
+    status.add_parser(subparsers, fmt_parent)
+    show.add_parser(subparsers, fmt_parent)
+    search.add_parser(subparsers, fmt_parent)
+    ls.add_parser(subparsers, fmt_parent)
     add.add_parser(subparsers)
     edit.add_parser(subparsers)
     rm.add_parser(subparsers)
-    totp.add_parser(subparsers)
+    totp.add_parser(subparsers, fmt_parent)
     clip.add_parser(subparsers)
-    generate.add_parser(subparsers)
+    generate.add_parser(subparsers, fmt_parent)
     lock.add_parser(subparsers)
     mkdir.add_parser(subparsers)
 
@@ -66,7 +70,7 @@ def main() -> None:
     browser_api_config_path = Path(args.browser_api_config or cli_config.browser_api_config_path)
     browser_config = BrowserConfig.load(browser_api_config_path)
 
-    fmt = args.fmt or cli_config.default_format
+    fmt = "json" if getattr(args, "json_output", False) else cli_config.default_format
 
     client = BrowserClient(browser_config)
     try:

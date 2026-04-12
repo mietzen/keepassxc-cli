@@ -47,15 +47,21 @@ This performs a key exchange with KeePassXC (you will be prompted to allow the a
 ### Global options
 
 ```
-keepassxc-cli [--config PATH] [--browser-api-config PATH] [--format {table,json,tsv}] [-v] COMMAND
+keepassxc-cli [--config PATH] [--browser-api-config PATH] [-v] COMMAND [COMMAND OPTIONS]
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--config` | Path to CLI config file (default: `~/.keepassxc/cli.json`) |
 | `--browser-api-config` | Path to browser API config file (default: `~/.keepassxc/browser-api.json`) |
-| `--format` | Output format: `table` (default), `json`, or `tsv` |
 | `-v, --verbose` | Enable verbose/debug logging |
+
+Most commands support a `-j / --json` flag for JSON output — pass it anywhere after the subcommand name:
+
+```bash
+keepassxc-cli show https://github.com -j
+keepassxc-cli ls -j
+```
 
 ### Commands
 
@@ -69,80 +75,90 @@ keepassxc-cli setup
 
 ```bash
 keepassxc-cli status
+keepassxc-cli status -j
 ```
 
-#### `ls` — List entries or groups
+#### `ls` — List all entries or groups
+
+> **Requires** "Allow access to all entries" to be enabled in  
+> KeePassXC → Settings → Browser Integration.
 
 ```bash
-keepassxc-cli ls                # list all entries (includes UUID column)
-keepassxc-cli ls --groups       # list groups (tree view)
-keepassxc-cli ls --format json  # output as JSON
+keepassxc-cli ls              # list all entries (includes UUID column)
+keepassxc-cli ls --groups     # list groups as a tree
+keepassxc-cli ls -j           # output as JSON
 ```
 
-UUIDs shown in the output are needed for `edit`, `rm`, `totp`, and `clip --field totp`.
+The UUIDs shown here are needed for `edit` and `rm`.
 
-#### `search` — Search entries
+#### `search` — Search entries by URL or hostname
 
 ```bash
-keepassxc-cli search github
-keepassxc-cli search "my bank" --show-password
+keepassxc-cli search github.com
+keepassxc-cli search https://github.com -p   # reveal passwords
+keepassxc-cli search github.com -j
 ```
 
-Searches case-insensitively across title, username, and URL fields.
+KeePassXC matches entries by URL/hostname (the same mechanism the browser extension uses).
 
 #### `show` — Show entries for a URL
 
 ```bash
 keepassxc-cli show https://github.com
-keepassxc-cli show https://github.com -p   # reveal password
+keepassxc-cli show https://github.com -p     # reveal password and TOTP
+keepassxc-cli show https://github.com -j
+```
+
+#### `totp` — Get TOTP code
+
+```bash
+keepassxc-cli totp https://github.com
+keepassxc-cli totp https://github.com -j
+```
+
+#### `clip` — Copy a field to clipboard
+
+```bash
+keepassxc-cli clip password https://github.com
+keepassxc-cli clip username https://github.com
+keepassxc-cli clip totp     https://github.com
 ```
 
 #### `add` — Add a new entry
 
 ```bash
 keepassxc-cli add --url https://example.com --username user@example.com --title "Example"
-# Password will be prompted securely if --password is not given
+# Password is prompted securely if --password is not given
 keepassxc-cli add --url https://example.com --username user --password mypass
 ```
 
 #### `edit` — Edit an entry
 
-> **Finding a UUID**: Use `keepassxc-cli ls` or `keepassxc-cli search <query>` to list entries with their UUIDs.
-
 ```bash
-keepassxc-cli edit <uuid> --username newuser
-keepassxc-cli edit <uuid> --password newpass --title "New Title"
+# Get the UUID first
+keepassxc-cli show https://github.com
+
+# Then edit — --url is required to resolve the current entry
+keepassxc-cli edit <uuid> --url https://github.com --username newuser
+keepassxc-cli edit <uuid> --url https://github.com --password newpass --title "New Title"
 ```
 
 #### `rm` — Delete an entry
 
 ```bash
-keepassxc-cli rm <uuid>          # prompts for confirmation
-keepassxc-cli rm <uuid> --yes    # skip confirmation
-```
-
-#### `totp` — Get TOTP code
-
-```bash
-keepassxc-cli totp <uuid>
-```
-
-#### `clip` — Copy to clipboard
-
-```bash
-keepassxc-cli clip https://github.com              # copies password
-keepassxc-cli clip https://github.com --field username
-keepassxc-cli clip https://github.com --field totp
+keepassxc-cli rm <uuid>        # prompts for confirmation
+keepassxc-cli rm <uuid> --yes  # skip confirmation
 ```
 
 #### `generate` — Generate a password
 
 ```bash
-keepassxc-cli generate
-keepassxc-cli generate --length 32 --symbols
-keepassxc-cli generate --no-numbers --no-uppercase
-keepassxc-cli generate --clip    # copy to clipboard instead of printing
+keepassxc-cli generate             # prints a password
+keepassxc-cli generate --clip      # copy to clipboard instead
+keepassxc-cli generate -j
 ```
+
+KeePassXC uses its own configured password generator profile (set in KeePassXC → Tools → Password Generator).
 
 #### `lock` — Lock the database
 
@@ -166,7 +182,7 @@ Only non-default values are stored. Available options:
 | Key | Default | Description |
 |-----|---------|-------------|
 | `browser_api_config_path` | `~/.keepassxc/browser-api.json` | Path to the browser API config |
-| `default_format` | `table` | Default output format (`table`, `json`, `tsv`) |
+| `default_format` | `table` | Default output format (`table` or `json`) |
 
 Example `~/.keepassxc/cli.json`:
 ```json
@@ -206,6 +222,7 @@ ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 ## Known Limitations
 
 - Requires KeePassXC to be **running** and the database to be **open** (or biometric auto-unlock configured).
+- The `ls` command requires "Allow access to all entries" to be enabled in KeePassXC → Settings → Browser Integration.
 - The `clip` and `generate --clip` commands require `pyperclip` and a working clipboard (e.g., `xclip`/`xsel` on Linux, built-in on macOS/Windows).
 - The browser integration protocol does not support moving entries between groups directly.
-- Entry URLs in the database are stored as `KPH: url` string fields; entries without a URL field may not appear in `show` results.
+- Entry URLs in the database are stored as `KPH: url` string fields; entries without a URL field may not appear in `show`/`search` results.
