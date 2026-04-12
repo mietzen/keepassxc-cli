@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -70,7 +71,7 @@ def main() -> None:
     client = BrowserClient(browser_config)
     try:
         rc = args.func(client, args, cli_config, browser_config, browser_api_config_path, fmt=fmt)
-    except (KeePassXCError, ConnectionError, OSError) as e:
+    except (KeePassXCError, ConnectionError, OSError, json.JSONDecodeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         rc = 1
     sys.exit(rc)

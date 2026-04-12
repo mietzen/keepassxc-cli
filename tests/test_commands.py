@@ -45,12 +45,6 @@ def make_args(**kwargs) -> argparse.Namespace:
         "query": "test",
         "name": "NewGroup",
         "parent_uuid": "",
-        "length": 20,
-        "no_numbers": False,
-        "no_lowercase": False,
-        "no_uppercase": False,
-        "symbols": False,
-        "special": False,
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
@@ -267,20 +261,20 @@ class TestClipCommand:
 class TestGenerateCommand:
     def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.generate_password.return_value = "GenPass123!"
-        args = make_args(length=20, no_numbers=False, no_lowercase=False, no_uppercase=False, symbols=False, special=False, clip=False)
+        args = make_args(clip=False)
         rc = generate.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         assert "GenPass123!" in capsys.readouterr().out
 
     def test_failure(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.generate_password.return_value = None
-        args = make_args(length=20, no_numbers=False, no_lowercase=False, no_uppercase=False, symbols=False, special=False, clip=False)
+        args = make_args(clip=False)
         rc = generate.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
 
     def test_clip(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.generate_password.return_value = "GenPass123!"
-        args = make_args(length=20, no_numbers=False, no_lowercase=False, no_uppercase=False, symbols=False, special=False, clip=True)
+        args = make_args(clip=True)
         with patch.dict("sys.modules", {"pyperclip": MagicMock()}):
             rc = generate.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0

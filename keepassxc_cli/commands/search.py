@@ -32,7 +32,7 @@ def run(
         e for e in all_entries
         if query in e.name.lower()
         or query in e.login.lower()
-        or any(query in v.lower() for sf in e.string_fields for v in sf.values())
+        or any(query in v.lower() for sf in e.string_fields for v in sf.values() if v is not None)
     ]
     if not matches:
         print(f"No entries found matching: {args.query}", file=sys.stderr)

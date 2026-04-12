@@ -11,13 +11,10 @@ from keepassxc_cli.output import print_password
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("generate", help="Generate a password")
-    p.add_argument("--length", type=int, default=20, help="Password length (default: 20)")
-    p.add_argument("--no-numbers", action="store_true", help="Exclude numbers")
-    p.add_argument("--no-lowercase", action="store_true", help="Exclude lowercase letters")
-    p.add_argument("--no-uppercase", action="store_true", help="Exclude uppercase letters")
-    p.add_argument("--symbols", action="store_true", help="Include symbols")
-    p.add_argument("--special", action="store_true", help="Include special characters")
+    p = subparsers.add_parser(
+        "generate",
+        help="Generate a password using KeePassXC's configured password profile",
+    )
     p.add_argument("--clip", action="store_true", help="Copy to clipboard instead of printing")
     p.set_defaults(func=run)
 
@@ -31,14 +28,7 @@ def run(
     *,
     fmt: str = "table",
 ) -> int:
-    password = client.generate_password(
-        length=args.length,
-        numbers=not args.no_numbers,
-        lowercase=not args.no_lowercase,
-        uppercase=not args.no_uppercase,
-        symbols=args.symbols,
-        special=args.special,
-    )
+    password = client.generate_password()
     if password is None:
         print("Failed to generate password.", file=sys.stderr)
         return 1
