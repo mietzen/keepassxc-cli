@@ -14,7 +14,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         "edit",
         help="Edit an existing entry by UUID",
         description=(
-            "Edit an existing entry. The UUID must be known (use 'ls' or 'show' to find it).\n"
+            "Edit an existing entry. The UUID must be known (use 'show' to find it).\n"
             "Provide --url so the entry can be resolved; omitted fields are left unchanged."
         ),
     )
