@@ -10,7 +10,7 @@ import pytest
 from keepassxc_browser_api import Entry, Group, BrowserConfig, Association
 from keepassxc_cli.config import CliConfig
 from keepassxc_cli.commands import (
-    setup, status, show, add, edit, rm, totp, clip, lock, mkdir,
+    setup, status, show, add, edit, rm, totp, clip, lock, mkdir, ls, search,
 )
 
 
@@ -270,3 +270,58 @@ class TestMkdirCommand:
         args = make_args(name="MyGroup", parent_uuid="")
         rc = mkdir.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
+
+
+# --- ls ---
+
+class TestLsCommand:
+    def test_entries(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry()
+        mock_client.get_database_entries.return_value = [entry]
+        args = make_args()
+        args.groups = False
+        rc = ls.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        mock_client.get_database_entries.assert_called_once()
+        assert "Test Entry" in capsys.readouterr().out
+
+    def test_groups(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
+        group = mock_group(name="Root")
+        mock_client.get_database_groups.return_value = [group]
+        args = make_args()
+        args.groups = True
+        rc = ls.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        mock_client.get_database_groups.assert_called_once()
+        assert "Root" in capsys.readouterr().out
+
+    def test_empty_entries(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        mock_client.get_database_entries.return_value = []
+        args = make_args()
+        args.groups = False
+        rc = ls.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+
+
+# --- search ---
+
+class TestSearchCommand:
+    def test_match(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry(name="GitHub", login="user@example.com")
+        mock_client.get_database_entries.return_value = [entry]
+        args = make_args()
+        args.query = "github"
+        args.show_password = False
+        rc = search.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        assert "GitHub" in capsys.readouterr().out
+
+    def test_no_match(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry(name="GitHub")
+        mock_client.get_database_entries.return_value = [entry]
+        args = make_args()
+        args.query = "nonexistent"
+        args.show_password = False
+        rc = search.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+        assert "No entries found" in capsys.readouterr().err
