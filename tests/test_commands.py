@@ -32,6 +32,7 @@ def browser_config_path(tmp_path):
 def make_args(**kwargs) -> argparse.Namespace:
     defaults = {
         "show_password": False,
+        "show_kph_prefix": False,
         "yes": False,
         "field": "password",
         "url": "https://example.com",
@@ -99,7 +100,7 @@ class TestStatusCommand:
 
 class TestShowCommand:
     def test_found_entries(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
-        entry = mock_entry()
+        entry = mock_entry(string_fields=[{"KPH: url": "https://github.com"}])
         mock_client.get_logins.return_value = [entry]
         args = make_args(url="https://example.com", show_password=False)
         rc = show.run(mock_client, args, cli_config, browser_config, browser_config_path)
@@ -107,6 +108,8 @@ class TestShowCommand:
         out = capsys.readouterr().out
         assert "Test Entry" in out
         assert "Password" not in out
+        assert "KPH: " not in out
+        assert "url: https://github.com" in out
 
     def test_found_entries_show_password(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
         entry = mock_entry()
@@ -117,6 +120,14 @@ class TestShowCommand:
         out = capsys.readouterr().out
         assert "Test Entry" in out
         assert "Password:" in out
+
+    def test_found_entries_show_kph_prefix(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry(string_fields=[{"KPH: url": "https://github.com"}])
+        mock_client.get_logins.return_value = [entry]
+        args = make_args(url="https://example.com", show_password=False, show_kph_prefix=True)
+        rc = show.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        assert "KPH: url: https://github.com" in capsys.readouterr().out
 
     def test_no_entries(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.get_logins.return_value = []

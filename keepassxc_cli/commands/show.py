@@ -15,6 +15,7 @@ def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.Argu
     p = subparsers.add_parser("show", parents=parents, help="Show entries matching a URL")
     p.add_argument("url", help="URL or search string")
     p.add_argument("-p", "--show-password", action="store_true", help="Reveal password and TOTP")
+    p.add_argument("--show-kph-prefix", action="store_true", help="Keep 'KPH: ' prefix on custom string field names")
     p.set_defaults(func=run)
 
 
@@ -32,7 +33,7 @@ def run(
         print(f"No entries found for: {args.url}", file=sys.stderr)
         return 1
     for entry in entries:
-        print_entry_detail(entry, fmt, show_password=args.show_password)
+        print_entry_detail(entry, fmt, show_password=args.show_password, show_kph_prefix=getattr(args, "show_kph_prefix", False))
         if fmt == "table" and len(entries) > 1:
             print()
     return 0
