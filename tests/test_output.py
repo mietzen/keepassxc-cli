@@ -34,12 +34,20 @@ class TestPrintEntryDetail:
         assert "user@example.com" in out
         assert "Password" not in out
         assert "s3cr3t" not in out
+        assert "KPH: " not in out
+        assert "url: https://github.com" in out
 
     def test_table_format_show_password(self, capsys, sample_entry):
         print_entry_detail(sample_entry, fmt="table", show_password=True)
         out = capsys.readouterr().out
         assert "s3cr3t" in out
         assert "Password:" in out
+        assert "KPH: " not in out
+
+    def test_table_format_show_kph_prefix(self, capsys, sample_entry):
+        print_entry_detail(sample_entry, fmt="table", show_password=False, show_kph_prefix=True)
+        out = capsys.readouterr().out
+        assert "KPH: url: https://github.com" in out
 
     def test_json_format_hidden(self, capsys, sample_entry):
         print_entry_detail(sample_entry, fmt="json", show_password=False)
@@ -47,6 +55,7 @@ class TestPrintEntryDetail:
         data = json.loads(out)
         assert data["name"] == "GitHub"
         assert "password" not in data
+        assert data["string_fields"] == [{"url": "https://github.com"}]
 
     def test_json_format_show_password(self, capsys, sample_entry):
         print_entry_detail(sample_entry, fmt="json", show_password=True)
@@ -54,6 +63,12 @@ class TestPrintEntryDetail:
         data = json.loads(out)
         assert data["name"] == "GitHub"
         assert data["password"] == "s3cr3t"
+        assert data["string_fields"] == [{"url": "https://github.com"}]
+
+    def test_json_format_show_kph_prefix(self, capsys, sample_entry):
+        print_entry_detail(sample_entry, fmt="json", show_password=False, show_kph_prefix=True)
+        data = json.loads(capsys.readouterr().out)
+        assert data["string_fields"] == [{"KPH: url": "https://github.com"}]
 
 
 class TestPrintTotp:

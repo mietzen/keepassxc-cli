@@ -4,9 +4,26 @@ import json
 
 from keepassxc_browser_api import Entry
 
+_KPH_PREFIX = "KPH: "
 
-def print_entry_detail(entry: Entry, fmt: str = "table", show_password: bool = False) -> None:
+
+def _strip_kph(key: str) -> str:
+    return key[len(_KPH_PREFIX):] if key.startswith(_KPH_PREFIX) else key
+
+
+def print_entry_detail(
+    entry: Entry,
+    fmt: str = "table",
+    show_password: bool = False,
+    show_kph_prefix: bool = False,
+) -> None:
     totp = entry.totp if show_password else None
+
+    def _fields() -> list[dict[str, str]]:
+        if show_kph_prefix:
+            return entry.string_fields
+        return [{_strip_kph(k): v for k, v in sf.items()} for sf in entry.string_fields]
+
     if fmt == "json":
         data = {
             "uuid": entry.uuid,
@@ -14,7 +31,7 @@ def print_entry_detail(entry: Entry, fmt: str = "table", show_password: bool = F
             "login": entry.login,
             "group": entry.group,
             "group_uuid": entry.group_uuid,
-            "string_fields": entry.string_fields,
+            "string_fields": _fields(),
         }
         if show_password:
             data["password"] = entry.password
@@ -35,7 +52,7 @@ def print_entry_detail(entry: Entry, fmt: str = "table", show_password: bool = F
     if entry.group_uuid:
         print(f"Group UUID: {entry.group_uuid}")
     if entry.string_fields:
-        for sf in entry.string_fields:
+        for sf in _fields():
             for k, v in sf.items():
                 print(f"{k}: {v}")
 
