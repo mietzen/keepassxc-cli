@@ -70,11 +70,8 @@ def mock_client():
     client.test_associate.return_value = True
     client.get_logins.return_value = [make_entry()]
     client.set_login.return_value = True
-    client.get_database_entries.return_value = [make_entry()]
-    client.get_database_groups.return_value = [make_group()]
     client.create_group.return_value = make_group(uuid="new-uuid", name="NewGroup")
     client.get_totp.return_value = "123456"
     client.delete_entry.return_value = True
     client.lock_database.return_value = True
-    client.generate_password.return_value = "GeneratedPass123"
     return client

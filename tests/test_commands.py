@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from keepassxc_browser_api import Entry, Group, BrowserConfig, Association
+from keepassxc_browser_api import Entry, BrowserConfig, Association
 from keepassxc_cli.config import CliConfig
 from keepassxc_cli.commands import (
     setup, status, show, add, edit, rm, totp, clip, lock, mkdir,
