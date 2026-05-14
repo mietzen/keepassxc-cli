@@ -106,10 +106,14 @@ keepassxc-cli clip totp     https://github.com
 #### `add` — Add a new entry
 
 ```bash
-keepassxc-cli add --url https://example.com --username user@example.com --title "Example"
 # Password is prompted securely if --password is not given
+keepassxc-cli add --url https://example.com --username user@example.com
 keepassxc-cli add --url https://example.com --username user --password mypass
+# Place the entry in a specific group by UUID
+keepassxc-cli add --url https://example.com --username user --group-uuid <group-uuid>
 ```
+
+> **Note**: The entry title is always derived from the URL hostname by KeePassXC. The protocol has no field to set a custom title.
 
 #### `edit` — Edit an entry
 
