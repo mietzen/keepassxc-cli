@@ -38,7 +38,6 @@ def make_args(**kwargs) -> argparse.Namespace:
         "url": "https://example.com",
         "username": "user",
         "password": "pass",
-        "title": "Example",
         "group_uuid": "",
         "uuid": "abcdef12-0000-0000-0000-000000000000",
         "name": "NewGroup",
@@ -142,7 +141,7 @@ class TestShowCommand:
 class TestAddCommand:
     def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.set_login.return_value = True
-        args = make_args(url="https://example.com", username="u", password="p", title="T", group_uuid="")
+        args = make_args(url="https://example.com", username="u", password="p", group_uuid="")
         rc = add.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         mock_client.set_login.assert_called_once()
@@ -150,7 +149,7 @@ class TestAddCommand:
 
     def test_failure(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.set_login.return_value = False
-        args = make_args(url="https://example.com", username="u", password="p", title="T", group_uuid="")
+        args = make_args(url="https://example.com", username="u", password="p", group_uuid="")
         rc = add.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
 
