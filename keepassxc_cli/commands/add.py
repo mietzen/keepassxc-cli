@@ -15,7 +15,6 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--url", required=True, help="Entry URL")
     p.add_argument("--username", required=True, help="Username")
     p.add_argument("--password", default=None, help="Password (prompted if omitted)")
-    p.add_argument("--title", default="", help="Entry title")
     p.add_argument("--group-uuid", default="", help="Target group UUID")
     p.set_defaults(func=run)
 
@@ -37,7 +36,6 @@ def run(
         url=args.url,
         username=args.username,
         password=password,
-        title=args.title,
         group_uuid=args.group_uuid,
     )
     if success:
