@@ -42,7 +42,6 @@ def make_args(**kwargs) -> argparse.Namespace:
         "group_uuid": "",
         "uuid": "abcdef12-0000-0000-0000-000000000000",
         "name": "NewGroup",
-        "parent_uuid": "",
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
@@ -270,14 +269,22 @@ class TestMkdirCommand:
     def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
         new_group = mock_group(uuid="new-uuid", name="MyGroup")
         mock_client.create_group.return_value = new_group
-        args = make_args(name="MyGroup", parent_uuid="")
+        args = make_args(name="MyGroup")
         rc = mkdir.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         out = capsys.readouterr().out
         assert "MyGroup" in out
 
+    def test_path_syntax(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
+        new_group = mock_group(uuid="new-uuid", name="Projects")
+        mock_client.create_group.return_value = new_group
+        args = make_args(name="Work/Projects")
+        rc = mkdir.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        mock_client.create_group.assert_called_once_with("Work/Projects")
+
     def test_failure(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.create_group.return_value = None
-        args = make_args(name="MyGroup", parent_uuid="")
+        args = make_args(name="MyGroup")
         rc = mkdir.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
