@@ -148,6 +148,33 @@ keepassxc-cli mkdir "Work/Projects"   # create Projects inside Work
 
 Use `/`-separated paths to create nested groups. KeePassXC creates any missing path segments automatically.
 
+#### `group-uuid` — Look up a group's UUID by path
+
+```bash
+keepassxc-cli group-uuid "Work"
+keepassxc-cli group-uuid "Work/Projects"
+keepassxc-cli group-uuid "Work/Projects" -j
+```
+
+Returns the UUID for the group at the given path (relative to the database root). Useful for scripting — pipe the UUID into `add --group-uuid`.
+
+JSON output (`-j`):
+```json
+{
+  "path": "Work/Projects",
+  "name": "Projects",
+  "uuid": "<uuid>"
+}
+```
+
+#### `version` — Show the CLI version
+
+```bash
+keepassxc-cli version
+```
+
+Does not require a running KeePassXC instance.
+
 ## Configuration
 
 ### CLI config (`~/.keepassxc/cli.json`)

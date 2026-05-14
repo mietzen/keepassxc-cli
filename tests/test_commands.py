@@ -10,7 +10,7 @@ import pytest
 from keepassxc_browser_api import Entry, BrowserConfig, Association
 from keepassxc_cli.config import CliConfig
 from keepassxc_cli.commands import (
-    setup, status, show, add, edit, rm, totp, clip, lock, mkdir,
+    setup, status, show, add, edit, rm, totp, clip, lock, mkdir, group_uuid, version,
 )
 
 
@@ -41,6 +41,7 @@ def make_args(**kwargs) -> argparse.Namespace:
         "group_uuid": "",
         "uuid": "abcdef12-0000-0000-0000-000000000000",
         "name": "NewGroup",
+        "path": "Work",
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
@@ -287,3 +288,86 @@ class TestMkdirCommand:
         args = make_args(name="MyGroup")
         rc = mkdir.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
+
+
+# --- group-uuid ---
+
+
+class TestGroupUuidCommand:
+    def _make_tree(self, mock_group):
+        from keepassxc_browser_api import Group
+        projects = mock_group(uuid="projects-uuid", name="Projects")
+        work = mock_group(uuid="work-uuid", name="Work", children=[projects])
+        root = mock_group(uuid="root-uuid", name="Root", children=[work])
+        return [root]
+
+    def test_found_top_level(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
+        mock_client.get_database_groups.return_value = self._make_tree(mock_group)
+        args = make_args(path="Work")
+        rc = group_uuid.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "work-uuid" in out
+        assert "Work" in out
+
+    def test_found_nested_path(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
+        mock_client.get_database_groups.return_value = self._make_tree(mock_group)
+        args = make_args(path="Work/Projects")
+        rc = group_uuid.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "projects-uuid" in out
+
+    def test_not_found(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
+        mock_client.get_database_groups.return_value = self._make_tree(mock_group)
+        args = make_args(path="Nonexistent")
+        rc = group_uuid.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+        err = capsys.readouterr().err
+        assert "not found" in err.lower()
+
+    def test_not_found_mid_path(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
+        mock_client.get_database_groups.return_value = self._make_tree(mock_group)
+        args = make_args(path="Work/Nope/Projects")
+        rc = group_uuid.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+
+    def test_json_output(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
+        import json
+        mock_client.get_database_groups.return_value = self._make_tree(mock_group)
+        args = make_args(path="Work/Projects")
+        rc = group_uuid.run(mock_client, args, cli_config, browser_config, browser_config_path, fmt="json")
+        assert rc == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data["path"] == "Work/Projects"
+        assert data["name"] == "Projects"
+        assert data["uuid"] == "projects-uuid"
+
+    def test_get_database_groups_failure(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        mock_client.get_database_groups.return_value = []
+        args = make_args(path="Work")
+        rc = group_uuid.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+
+
+# --- version ---
+
+
+class TestVersionCommand:
+    def test_prints_version(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        with patch("keepassxc_cli.commands.version.version", return_value="1.3.0"):
+            args = make_args()
+            rc = version.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "keepassxc-cli" in out
+        assert "1.3.0" in out
+
+    def test_package_not_found(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        from importlib.metadata import PackageNotFoundError
+        with patch("keepassxc_cli.commands.version.version", side_effect=PackageNotFoundError):
+            args = make_args()
+            rc = version.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "unknown" in out
