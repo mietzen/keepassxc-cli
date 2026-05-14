@@ -71,6 +71,7 @@ def mock_client():
     client.get_logins.return_value = [make_entry()]
     client.set_login.return_value = True
     client.create_group.return_value = make_group(uuid="new-uuid", name="NewGroup")
+    client.get_database_groups.return_value = [make_group()]
     client.get_totp.return_value = "123456"
     client.delete_entry.return_value = True
     client.lock_database.return_value = True
