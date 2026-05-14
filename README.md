@@ -143,8 +143,10 @@ keepassxc-cli lock
 
 ```bash
 keepassxc-cli mkdir "Work"
-keepassxc-cli mkdir "Projects" --parent-uuid <parent-group-uuid>
+keepassxc-cli mkdir "Work/Projects"   # create Projects inside Work
 ```
+
+Use `/`-separated paths to create nested groups. KeePassXC creates any missing path segments automatically.
 
 ## Configuration
 

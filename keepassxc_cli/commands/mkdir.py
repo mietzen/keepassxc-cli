@@ -11,8 +11,10 @@ from keepassxc_cli.config import CliConfig
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser("mkdir", help="Create a new group")
-    p.add_argument("name", help="Group name")
-    p.add_argument("--parent-uuid", default="", help="Parent group UUID")
+    p.add_argument(
+        "name",
+        help="Group name or path. Use '/' to create nested groups (e.g. 'Work/Projects').",
+    )
     p.set_defaults(func=run)
 
 
@@ -25,7 +27,7 @@ def run(
     *,
     fmt: str = "table",
 ) -> int:
-    group = client.create_group(args.name, parent_group_uuid=args.parent_uuid)
+    group = client.create_group(args.name)
     if group is None:
         print("Failed to create group.", file=sys.stderr)
         return 1
