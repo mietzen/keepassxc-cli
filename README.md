@@ -199,6 +199,26 @@ Shared with `keepassxc-browser-api`. Contains the association keys created durin
 
 Both config files are stored with `0o600` permissions (owner read/write only).
 
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Generic error (unexpected KeePassXC error, OS error, config parse error) |
+| `2` | KeePassXC is not running or the socket is not found (`ConnectionError`) |
+| `3` | Database unlock timed out (`DatabaseLockedError`) |
+| `4` | Access denied by user — either the access prompt was cancelled or "Allow access to all entries" was denied |
+
+These codes are stable and suitable for scripting, e.g.:
+
+```bash
+keepassxc-cli show https://example.com || case $? in
+  2) echo "Start KeePassXC first" ;;
+  3) echo "Unlock timed out" ;;
+  4) echo "Access denied" ;;
+esac
+```
+
 ## Development
 
 ```bash
