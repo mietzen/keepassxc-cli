@@ -1,8 +1,6 @@
-# KeepassXC CLI
+# KeePassXC CLI
 
 A command-line interface for [KeePassXC](https://keepassxc.org/) that communicates via the browser extension protocol, supporting biometric (TouchID/fingerprint) unlock on supported platforms.
-
-## What it is
 
 `keepassxc-cli` talks to a running KeePassXC instance using the same native messaging protocol used by the KeePassXC Browser extension. This means:
 
@@ -12,24 +10,32 @@ A command-line interface for [KeePassXC](https://keepassxc.org/) that communicat
 - **TOTP**: Retrieve time-based one-time passwords.
 - **Clipboard**: Copy credentials directly to the clipboard.
 
+![Functionality demonstration](assets/demo.gif)
+
+KeePassXC CLI based on [KeePassXC Browser API](https://github.com/mietzen/keepassxc-browser-api).
+
 ## Prerequisites
 
-1. **KeePassXC** ≥ 2.7 with the **Browser Integration** feature enabled:
-   - Open KeePassXC → Tools → Settings → Browser Integration
-   - Enable "Enable browser integration"
-2. A KeePassXC database must be open (or KeePassXC must be running with auto-open configured).
-3. Python ≥ 3.10
+- **macOS** (uses Unix sockets and KeePassXC's browser extension socket)
+- **Python >= 3.10**
+- **KeePassXC** with:
+  - Browser Integration enabled (Settings > Browser Integration > Enable browser integration)
+    ![KeePassXC Browser Integration Settings screenshot](assets/settings-browser-integration.png)
 
 ## Install
 
-```bash
-pipx install keepassxc-cli
+### Homebrew (recommended)
+
+See **[homebrew homepage](https://brew.sh/)** on how to setup homebrew.
+
+```shell
+brew install mietzen/tap/keepassxc-cli
 ```
 
-Or with pip:
+### pipx
 
 ```bash
-pip install keepassxc-cli
+pipx install keepassxc-cli
 ```
 
 ## Setup
@@ -221,8 +227,11 @@ esac
 
 ## Development
 
+This package depends on [`keepassxc-browser-api`](https://github.com/mietzen/keepassxc-browser-api), which handles the KeePassXC browser extension protocol. The browser API credentials are stored in `~/.keepassxc/browser-api.json` and are shared with `keepassxc-ssh-agent` if installed.
+
 ```bash
 git clone https://github.com/mietzen/keepassxc-cli
+git clone https://github.com/mietzen/keepassxc-browser-api
 cd keepassxc-cli
 
 python3 -m venv .venv
