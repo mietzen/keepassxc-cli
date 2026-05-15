@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
-from keepassxc_browser_api.exceptions import KeePassXCError
+from keepassxc_browser_api.exceptions import ConnectionError, KeePassXCError
 
 from keepassxc_cli.config import CliConfig
 from keepassxc_cli.output import print_status
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
@@ -27,10 +30,11 @@ def run(
 ) -> int:
     info: dict = {}
 
-    connected = client.connect()
-    info["Connected"] = "yes" if connected else "no"
-
-    if not connected:
+    try:
+        client.connect()
+        info["Connected"] = "yes"
+    except ConnectionError:
+        info["Connected"] = "no"
         print_status(info, fmt)
         return 1
 

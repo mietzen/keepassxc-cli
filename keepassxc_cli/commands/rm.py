@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -31,10 +33,6 @@ def run(
             print("Aborted.")
             return 1
 
-    success = client.delete_entry(args.uuid)
-    if success:
-        print("Entry deleted.")
-        return 0
-    else:
-        print("Failed to delete entry.", file=sys.stderr)
-        return 1
+    client.delete_entry(args.uuid)
+    print("Entry deleted.")
+    return 0

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -28,8 +30,5 @@ def run(
     fmt: str = "table",
 ) -> int:
     group = client.create_group(args.name)
-    if group is None:
-        print("Failed to create group.", file=sys.stderr)
-        return 1
     print(f"Group created: {group.name} [{group.uuid}]")
     return 0

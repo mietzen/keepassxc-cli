@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
 from keepassxc_cli.output import print_entry_detail
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
@@ -30,7 +32,7 @@ def run(
 ) -> int:
     entries = client.get_logins(args.url)
     if not entries:
-        print(f"No entries found for: {args.url}", file=sys.stderr)
+        logger.warning("No entries found for: %s", args.url)
         return 1
     for entry in entries:
         print_entry_detail(entry, fmt, show_password=args.show_password, show_kph_prefix=getattr(args, "show_kph_prefix", False))

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -23,11 +25,7 @@ def run(
     *,
     fmt: str = "table",
 ) -> int:
-    success = client.setup()
-    if success:
-        browser_config.save(browser_config_path)
-        print("Successfully associated with KeePassXC.")
-        return 0
-    else:
-        print("Failed to associate with KeePassXC.", file=sys.stderr)
-        return 1
+    client.setup()
+    browser_config.save(browser_config_path)
+    print("Successfully associated with KeePassXC.")
+    return 0

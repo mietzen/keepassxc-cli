@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -28,5 +30,5 @@ def run(
         print("Database locked.")
         return 0
     else:
-        print("Failed to lock database.", file=sys.stderr)
+        logger.error("Failed to lock database.")
         return 1

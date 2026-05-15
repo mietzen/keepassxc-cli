@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import argparse
 import getpass
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -32,15 +34,11 @@ def run(
     if password is None:
         password = getpass.getpass("Password: ")
 
-    success = client.set_login(
+    client.set_login(
         url=args.url,
         username=args.username,
         password=password,
         group_uuid=args.group_uuid,
     )
-    if success:
-        print("Entry added successfully.")
-        return 0
-    else:
-        print("Failed to add entry.", file=sys.stderr)
-        return 1
+    print("Entry added successfully.")
+    return 0

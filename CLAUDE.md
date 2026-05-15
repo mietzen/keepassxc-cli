@@ -95,8 +95,18 @@ ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 - **`from __future__ import annotations`** must be the first line of every `.py` source file.
 - **Ruff**: `ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli`
 - **No async code**: Everything is synchronous. No threads in the CLI.
-- **Output**: Use `print()` for normal output, `sys.stderr` for errors.
-- **Exit codes**: `run()` functions return `int` (0 = success, 1 = failure).
+- **Output**: Use `print()` for normal (stdout) output. Error/warning messages use `logger.error()` / `logger.warning()` — never `print(file=sys.stderr)` directly.
+- **Logging config**: Set by `__main__.py`. Non-verbose: `WARNING` level, `"%(message)s"` format, to `sys.stderr`. Verbose (`-v`): `DEBUG` level with timestamp format to `sys.stderr`.
+- **Exit codes**: `run()` functions return `int` (0 = success, non-zero = failure). `__main__.py` maps exceptions to exit codes:
+
+  | Code | Meaning |
+  |---|---|
+  | `0` | Success |
+  | `1` | Generic error (`KeePassXCError`, `OSError`, `JSONDecodeError`, unknown `ProtocolError`) |
+  | `2` | `ConnectionError` — KeePassXC not running / socket not found |
+  | `3` | `DatabaseLockedError` — unlock timeout exceeded |
+  | `4` | `ProtocolError(error_code=6 or 19)` — access denied by user |
+
 - **Config permissions**: Config files are written with `0o600` (owner read/write only).
 - **Venv**: Always use `.venv` for development.
 - **Python ≥ 3.10** required.

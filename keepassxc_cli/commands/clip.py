@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -32,12 +34,12 @@ def run(
     try:
         import pyperclip
     except ImportError:
-        print("Error: pyperclip is required for clipboard support. Install it with: pip install pyperclip", file=sys.stderr)
+        logger.error("pyperclip is required for clipboard support. Install it with: pip install pyperclip")
         return 1
 
     entries = client.get_logins(args.url)
     if not entries:
-        print(f"No entries found for: {args.url}", file=sys.stderr)
+        logger.warning("No entries found for: %s", args.url)
         return 1
 
     entry = entries[0]
@@ -49,10 +51,10 @@ def run(
     elif args.field == "totp":
         value = client.get_totp(entry.uuid)
         if value is None:
-            print(f"No TOTP configured for: {entry.name}", file=sys.stderr)
+            logger.warning("No TOTP configured for: %s", entry.name)
             return 1
     else:
-        print(f"Unknown field: {args.field}", file=sys.stderr)
+        logger.error("Unknown field: %s", args.field)
         return 1
 
     pyperclip.copy(value)
