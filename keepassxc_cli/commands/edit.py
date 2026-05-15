@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -39,14 +41,13 @@ def run(
     entries = client.get_logins(args.url)
     entry = next((e for e in entries if e.uuid == args.uuid), None)
     if entry is None:
-        print(
-            f"Entry {args.uuid} not found for URL: {args.url}\n"
-            "Hint: use 'keepassxc-cli show <url>' to look up the UUID.",
-            file=sys.stderr,
+        logger.error(
+            "Entry %s not found for URL: %s\nHint: use 'keepassxc-cli show <url>' to look up the UUID.",
+            args.uuid, args.url,
         )
         return 1
 
-    success = client.set_login(
+    client.set_login(
         url=args.url,
         username=args.username if args.username is not None else entry.login,
         password=args.password if args.password is not None else entry.password,
@@ -54,9 +55,5 @@ def run(
         uuid=entry.uuid,
         group_uuid=entry.group_uuid,
     )
-    if success:
-        print("Entry updated successfully.")
-        return 0
-    else:
-        print("Failed to update entry.", file=sys.stderr)
-        return 1
+    print("Entry updated successfully.")
+    return 0

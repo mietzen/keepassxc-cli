@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
@@ -34,10 +36,6 @@ def run(
     fmt: str = "table",
 ) -> int:
     groups = client.get_database_groups()
-    if not groups:
-        print("Failed to retrieve group tree.", file=sys.stderr)
-        return 1
-
     root = groups[0]
     parts = args.path.split("/")
 
@@ -47,7 +45,7 @@ def run(
     for part in parts:
         matched = next((g for g in current if g.name == part), None)
         if matched is None:
-            print(f"Group not found: {args.path!r}", file=sys.stderr)
+            logger.error("Group not found: %r", args.path)
             return 1
         current = matched.children
 

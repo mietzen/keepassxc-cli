@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
-from keepassxc_browser_api.exceptions import KeePassXCError, ConnectionError
+from keepassxc_browser_api.exceptions import ConnectionError, DatabaseLockedError, KeePassXCError, ProtocolError
 
 from .config import CliConfig, DEFAULT_CLI_CONFIG_PATH
 from .commands import setup, status, show, add, edit, rm, totp, clip, lock, mkdir, group_uuid, version
@@ -61,7 +61,17 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%H:%M:%S",
+        )
+    else:
+        logging.basicConfig(
+            level=logging.WARNING,
+            format="%(message)s",
+            stream=sys.stderr,
+        )
 
     cli_config_path = Path(args.config)
     cli_config = CliConfig.load(cli_config_path)
@@ -74,7 +84,16 @@ def main() -> None:
     client = BrowserClient(browser_config)
     try:
         rc = args.func(client, args, cli_config, browser_config, browser_api_config_path, fmt=fmt)
-    except (KeePassXCError, ConnectionError, OSError, json.JSONDecodeError) as e:
+    except ConnectionError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        rc = 2
+    except DatabaseLockedError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        rc = 3
+    except ProtocolError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        rc = 4 if e.error_code in (6, 19) else 1
+    except (KeePassXCError, OSError, json.JSONDecodeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         rc = 1
     sys.exit(rc)
