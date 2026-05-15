@@ -9,7 +9,6 @@ import pytest
 
 from keepassxc_browser_api import Entry, BrowserConfig, Association
 from keepassxc_browser_api.exceptions import ConnectionError, DatabaseLockedError, ProtocolError
-from keepassxc_browser_api.exceptions import ConnectionError, DatabaseLockedError, ProtocolError
 from keepassxc_cli.config import CliConfig
 from keepassxc_cli.commands import (
     setup, status, show, add, edit, rm, totp, clip, lock, mkdir, group_uuid, version,
@@ -52,7 +51,8 @@ def make_args(**kwargs) -> argparse.Namespace:
 # --- setup ---
 
 class TestSetupCommand:
-    def test_success(self, mock_client, cNone
+    def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        mock_client.setup.return_value = None
         args = make_args()
         rc = setup.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
@@ -62,7 +62,7 @@ class TestSetupCommand:
         mock_client.setup.side_effect = ConnectionError("KeePassXC not running")
         args = make_args()
         with pytest.raises(ConnectionError):
-            setup.run(mock_client, args, cli_config, browser_config, browser_config_path)g, browser_config, browser_config_path)
+            setup.run(mock_client, args, cli_config, browser_config, browser_config_path)
 
 
 # --- status ---
@@ -78,7 +78,7 @@ class TestStatusCommand:
         assert "yes" in out
 
     def test_not_connected(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
-        mock_client.connect.side_effect = ConnectionError("not available")tionError("not available")
+        mock_client.connect.side_effect = ConnectionError("not available")
         args = make_args()
         rc = status.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
@@ -133,7 +133,7 @@ class TestShowCommand:
         args = make_args(url="https://notfound.com")
         rc = show.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
-        assert any("No entries" in r.message for r in caplog.records)caplog.records)
+        assert any("No entries" in r.message for r in caplog.records)
 
 
 # --- add ---
@@ -151,7 +151,7 @@ class TestAddCommand:
         mock_client.set_login.side_effect = ProtocolError("access denied", error_code=6)
         args = make_args(url="https://example.com", username="u", password="p", group_uuid="")
         with pytest.raises(ProtocolError):
-            add.run(mock_client, args, cli_config, browser_config, browser_config_path)ck_client, args, cli_config, browser_config, browser_config_path)
+            add.run(mock_client, args, cli_config, browser_config, browser_config_path)
 
 
 # --- edit ---
@@ -171,7 +171,7 @@ class TestEditCommand:
         args = make_args(uuid="nonexistent-uuid", url="https://example.com", username=None, password=None, title=None)
         rc = edit.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
-        assert any("not found" in r.message.lower() for r in caplog.records caplog.records)
+        assert any("not found" in r.message.lower() for r in caplog.records)
 
 
 # --- rm ---
@@ -189,7 +189,7 @@ class TestRmCommand:
         mock_client.delete_entry.side_effect = ProtocolError("access denied", error_code=6)
         args = make_args(uuid="some-uuid", yes=True)
         with pytest.raises(ProtocolError):
-            rm.run(mock_client, args, cli_config, browser_config, browser_config_path)k_client, args, cli_config, browser_config, browser_config_path)
+            rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
 
 
 # --- totp ---
@@ -243,7 +243,7 @@ class TestClipCommand:
         with patch.dict("sys.modules", {"pyperclip": None}):
             rc = clip.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
-        assert any("pyperclip" in r.message for r in caplog.records)caplog.records)
+        assert any("pyperclip" in r.message for r in caplog.records)
 
 
 # --- lock ---
@@ -287,7 +287,7 @@ class TestMkdirCommand:
         mock_client.create_group.side_effect = ConnectionError("KeePassXC not running")
         args = make_args(name="MyGroup")
         with pytest.raises(ConnectionError):
-            mkdir.run(mock_client, args, cli_config, browser_config, browser_config_path)mock_client, args, cli_config, browser_config, browser_config_path)
+            mkdir.run(mock_client, args, cli_config, browser_config, browser_config_path)
 
 
 # --- group-uuid ---
@@ -323,7 +323,8 @@ class TestGroupUuidCommand:
         args = make_args(path="Nonexistent")
         rc = group_uuid.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
-        assert any("not found" in r.message.lower() for r in caplog.records
+        assert any("not found" in r.message.lower() for r in caplog.records)
+
     def test_not_found_mid_path(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
         mock_client.get_database_groups.return_value = self._make_tree(mock_group)
         args = make_args(path="Work/Nope/Projects")
@@ -342,7 +343,6 @@ class TestGroupUuidCommand:
         assert data["uuid"] == "projects-uuid"
 
     def test_get_database_groups_failure_propagates(self, mock_client, cli_config, browser_config, browser_config_path, mock_group):
-        mock_client.get_database_groups._propagates(self, mock_client, cli_config, browser_config, browser_config_path, mock_group):
         mock_client.get_database_groups.side_effect = ConnectionError("KeePassXC not running")
         args = make_args(path="Work")
         with pytest.raises(ConnectionError):
