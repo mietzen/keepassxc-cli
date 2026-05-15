@@ -1,4 +1,4 @@
-# keepassxc-cli
+# KeepassXC CLI
 
 A command-line interface for [KeePassXC](https://keepassxc.org/) that communicates via the browser extension protocol, supporting biometric (TouchID/fingerprint) unlock on supported platforms.
 
@@ -20,7 +20,7 @@ A command-line interface for [KeePassXC](https://keepassxc.org/) that communicat
 2. A KeePassXC database must be open (or KeePassXC must be running with auto-open configured).
 3. Python ≥ 3.10
 
-## Installation
+## Install
 
 ```bash
 pipx install keepassxc-cli
@@ -237,7 +237,10 @@ pip install -e ".[dev]"
 # Run tests
 pytest --tb=short -q
 
-# Run linter
+# Run tests with coverage
+pytest --cov=keepassxc_cli --cov-report=term-missing
+
+# Lint
 ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 ```
 

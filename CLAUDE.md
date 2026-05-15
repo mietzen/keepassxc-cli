@@ -1,12 +1,12 @@
-# CLAUDE.md — keepassxc-cli
+# keepassxc-cli - Claude Code Instructions
 
-This document provides context for AI assistants working on this project.
-
-## Project Purpose
+## Project Overview
 
 `keepassxc-cli` is a Python command-line tool that communicates with a running KeePassXC instance using the KeePassXC Browser Extension protocol (native messaging over a Unix socket). It enables terminal users to interact with KeePassXC — adding, editing, and deleting entries — while leveraging KeePassXC's biometric (TouchID/fingerprint) unlock support.
 
-## Package Structure
+## Architecture
+
+### Package Structure
 
 ```
 keepassxc_cli/
@@ -34,7 +34,7 @@ tests/
 └── test_commands.py     # command run() function tests with mocked BrowserClient
 ```
 
-## Dependency: keepassxc-browser-api
+### Dependencies
 
 This package depends on `keepassxc-browser-api` (local package at `../mietzen-keepassxc-browser-api/`), which provides:
 
@@ -73,10 +73,9 @@ def run(
 ) -> int:
 ```
 
-## How to Build, Test, and Lint
+## Commands
 
 ```bash
-# Create venv and install
 python3 -m venv .venv
 source .venv/bin/activate
 pip install ../mietzen-keepassxc-browser-api/   # local dependency
@@ -84,13 +83,15 @@ pip install -e ".[dev]"
 
 # Run tests
 pytest --tb=short -q
+
+# Run tests with coverage
 pytest --cov=keepassxc_cli --cov-report=term-missing
 
 # Lint
 ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 ```
 
-## Key Conventions
+## Conventions
 
 - **`from __future__ import annotations`** must be the first line of every `.py` source file.
 - **Ruff**: `ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli`
@@ -122,3 +123,10 @@ ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 ## Output Formats
 
 Two formats are supported: `table` (default) and `json`. The `-j / --json` flag on individual subcommands or `default_format` in `cli.json` controls the default.
+
+## CI
+
+- `lint_and_test.yml` — Unit tests + ruff lint across Python 3.10–3.14
+- `pypi.yml` — Build & publish on release, then dispatch to homebrew-tap to update the formula
+- `auto-release.yml` — Auto-create patch release on dependabot merge
+- `auto-merge-dependabot.yml` — Auto-merge dependabot PRs
