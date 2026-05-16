@@ -40,6 +40,7 @@ def make_args(**kwargs) -> argparse.Namespace:
         "username": "user",
         "password": "pass",
         "group_uuid": "",
+        "group": None,
         "uuid": "abcdef12-0000-0000-0000-000000000000",
         "name": "NewGroup",
         "path": "Work",
@@ -141,15 +142,36 @@ class TestShowCommand:
 class TestAddCommand:
     def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.set_login.return_value = True
-        args = make_args(url="https://example.com", username="u", password="p", group_uuid="")
+        args = make_args(url="https://example.com", username="u", password="p", group_uuid="", group=None)
         rc = add.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         mock_client.set_login.assert_called_once()
         assert "added" in capsys.readouterr().out.lower()
 
+    def test_group_path_resolved(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_group):
+        from keepassxc_browser_api import Group
+        projects = mock_group(uuid="proj-uuid", name="Projects")
+        work = mock_group(uuid="work-uuid", name="Work", children=[projects])
+        root = mock_group(uuid="root-uuid", name="Root", children=[work])
+        mock_client.get_database_groups.return_value = [root]
+        mock_client.set_login.return_value = True
+        args = make_args(url="https://example.com", username="u", password="p", group_uuid="", group="Work/Projects")
+        rc = add.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        call_kwargs = mock_client.set_login.call_args.kwargs
+        assert call_kwargs["group_uuid"] == "proj-uuid"
+
+    def test_group_path_not_found(self, mock_client, cli_config, browser_config, browser_config_path, caplog, mock_group):
+        root = mock_group(uuid="root-uuid", name="Root", children=[])
+        mock_client.get_database_groups.return_value = [root]
+        args = make_args(url="https://example.com", username="u", password="p", group_uuid="", group="NonExistent")
+        rc = add.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+        assert any("not found" in r.message.lower() for r in caplog.records)
+
     def test_failure_propagates(self, mock_client, cli_config, browser_config, browser_config_path):
         mock_client.set_login.side_effect = ProtocolError("access denied", error_code=6)
-        args = make_args(url="https://example.com", username="u", password="p", group_uuid="")
+        args = make_args(url="https://example.com", username="u", password="p", group_uuid="", group=None)
         with pytest.raises(ProtocolError):
             add.run(mock_client, args, cli_config, browser_config, browser_config_path)
 
@@ -157,37 +179,91 @@ class TestAddCommand:
 # --- edit ---
 
 class TestEditCommand:
-    def test_entry_found_and_updated(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+    def test_uuid_specified_and_updated(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
         entry = mock_entry()
         mock_client.get_logins.return_value = [entry]
         mock_client.set_login.return_value = True
-        args = make_args(uuid=entry.uuid, url="https://example.com", username="newuser", password=None, title=None)
+        args = make_args(uuid=entry.uuid, url="https://example.com", username="newuser", password=None)
+        rc = edit.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        assert "updated" in capsys.readouterr().out.lower()
+        mock_client.set_login.assert_called_once()
+        call_kwargs = mock_client.set_login.call_args.kwargs
+        assert "title" not in call_kwargs
+
+    def test_no_uuid_single_match_auto_selected(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry()
+        mock_client.get_logins.return_value = [entry]
+        mock_client.set_login.return_value = True
+        args = make_args(uuid=None, url="https://example.com", username="newuser", password=None)
         rc = edit.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         assert "updated" in capsys.readouterr().out.lower()
 
-    def test_entry_not_found(self, mock_client, cli_config, browser_config, browser_config_path, caplog):
-        mock_client.get_logins.return_value = []
-        args = make_args(uuid="nonexistent-uuid", url="https://example.com", username=None, password=None, title=None)
+    def test_no_uuid_multiple_matches_error(self, mock_client, cli_config, browser_config, browser_config_path, caplog, mock_entry):
+        e1 = mock_entry(uuid="uuid-1", login="alice")
+        e2 = mock_entry(uuid="uuid-2", login="bob")
+        mock_client.get_logins.return_value = [e1, e2]
+        args = make_args(uuid=None, url="https://example.com", username="newuser", password=None)
+        rc = edit.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+        assert any("multiple" in r.message.lower() for r in caplog.records)
+
+    def test_uuid_not_in_results(self, mock_client, cli_config, browser_config, browser_config_path, caplog, mock_entry):
+        entry = mock_entry()
+        mock_client.get_logins.return_value = [entry]
+        args = make_args(uuid="nonexistent-uuid", url="https://example.com", username=None, password=None)
         rc = edit.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
         assert any("not found" in r.message.lower() for r in caplog.records)
+
+    def test_no_entries_found(self, mock_client, cli_config, browser_config, browser_config_path, caplog):
+        mock_client.get_logins.return_value = []
+        args = make_args(uuid=None, url="https://example.com", username=None, password=None)
+        rc = edit.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+        assert any("no entries" in r.message.lower() for r in caplog.records)
 
 
 # --- rm ---
 
 class TestRmCommand:
-    def test_with_yes_flag(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+    def test_uuid_with_yes_flag(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
         mock_client.delete_entry.return_value = True
-        args = make_args(uuid="some-uuid", yes=True)
+        args = make_args(uuid="some-uuid", url=None, yes=True)
         rc = rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         mock_client.delete_entry.assert_called_once_with("some-uuid")
         assert "deleted" in capsys.readouterr().out.lower()
 
+    def test_url_single_match_deletes(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        entry = mock_entry(uuid="url-resolved-uuid")
+        mock_client.get_logins.return_value = [entry]
+        mock_client.delete_entry.return_value = True
+        args = make_args(uuid=None, url="https://example.com", yes=True)
+        rc = rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        mock_client.delete_entry.assert_called_once_with("url-resolved-uuid")
+
+    def test_url_multiple_matches_error(self, mock_client, cli_config, browser_config, browser_config_path, caplog, mock_entry):
+        e1 = mock_entry(uuid="uuid-1", login="alice")
+        e2 = mock_entry(uuid="uuid-2", login="bob")
+        mock_client.get_logins.return_value = [e1, e2]
+        args = make_args(uuid=None, url="https://example.com", yes=True)
+        rc = rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+        assert any("multiple" in r.message.lower() for r in caplog.records)
+
+    def test_url_no_entries_error(self, mock_client, cli_config, browser_config, browser_config_path, caplog):
+        mock_client.get_logins.return_value = []
+        args = make_args(uuid=None, url="https://notfound.com", yes=True)
+        rc = rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+        assert any("no entries" in r.message.lower() for r in caplog.records)
+
     def test_failure_propagates(self, mock_client, cli_config, browser_config, browser_config_path):
         mock_client.delete_entry.side_effect = ProtocolError("access denied", error_code=6)
-        args = make_args(uuid="some-uuid", yes=True)
+        args = make_args(uuid="some-uuid", url=None, yes=True)
         with pytest.raises(ProtocolError):
             rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
 
