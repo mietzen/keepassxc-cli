@@ -11,7 +11,7 @@ from keepassxc_browser_api import BrowserClient, BrowserConfig
 from keepassxc_browser_api.exceptions import ConnectionError, DatabaseLockedError, KeePassXCError, ProtocolError
 
 from .config import CliConfig, DEFAULT_CLI_CONFIG_PATH
-from .commands import setup, status, show, add, edit, rm, totp, clip, lock, mkdir, group_uuid, version
+from .commands import setup, status, show, add, edit, rm, totp, clip, lock, unlock, mkdir, group_uuid, version
 
 # Shared parent parser that injects -j/--json into each subparser that supports it.
 # Defined at module level so command modules can import it if needed.
@@ -52,11 +52,12 @@ def main() -> None:
     edit.add_parser(subparsers, fmt_parent)
     rm.add_parser(subparsers, fmt_parent)
     totp.add_parser(subparsers, fmt_parent)
-    clip.add_parser(subparsers, fmt_parent)
+    clip.add_parser(subparsers)
     lock.add_parser(subparsers, fmt_parent)
+    unlock.add_parser(subparsers, fmt_parent)
     mkdir.add_parser(subparsers, fmt_parent)
     group_uuid.add_parser(subparsers, fmt_parent)
-    version.add_parser(subparsers)
+    version.add_parser(subparsers, fmt_parent)
 
     args = parser.parse_args()
 

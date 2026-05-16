@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import argparse
-import json
-from importlib.metadata import PackageNotFoundError, version
+import logging
 from pathlib import Path
 
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+from keepassxc_cli.output import print_result
+
+logger = logging.getLogger(__name__)
 
 
 def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
     parents = [fmt_parent] if fmt_parent else []
-    p = subparsers.add_parser("version", parents=parents, help="Show the keepassxc-cli version")
+    p = subparsers.add_parser("unlock", parents=parents, help="Unlock the KeePassXC database")
     p.set_defaults(func=run)
 
 
@@ -25,12 +27,6 @@ def run(
     *,
     fmt: str = "table",
 ) -> int:
-    try:
-        ver = version("keepassxc-cli")
-    except PackageNotFoundError:
-        ver = "unknown"
-    if fmt == "json":
-        print(json.dumps({"version": ver}, indent=2))
-    else:
-        print(f"keepassxc-cli {ver}")
+    client.ensure_unlocked()
+    print_result("Database unlocked.", fmt)
     return 0
