@@ -8,15 +8,16 @@ from pathlib import Path
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
-from keepassxc_cli.output import ensure_scheme
+from keepassxc_cli.output import ensure_scheme, print_result
 
 logger = logging.getLogger(__name__)
 
 
-def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("add", help="Add a new entry")
-    p.add_argument("--url", required=True, help="Entry URL")
-    p.add_argument("--username", required=True, help="Username")
+def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
+    parents = [fmt_parent] if fmt_parent else []
+    p = subparsers.add_parser("add", parents=parents, help="Add a new entry")
+    p.add_argument("url", help="Entry URL")
+    p.add_argument("username", help="Username")
     p.add_argument("--password", default=None, help="Password (prompted if omitted)")
     group = p.add_mutually_exclusive_group()
     group.add_argument("--group-uuid", default="", help="Target group UUID")
@@ -60,5 +61,5 @@ def run(
         password=password,
         group_uuid=group_uuid,
     )
-    print("Entry added successfully.")
+    print_result("Entry added.", fmt)
     return 0

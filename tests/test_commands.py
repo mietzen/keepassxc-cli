@@ -44,6 +44,7 @@ def make_args(**kwargs) -> argparse.Namespace:
         "uuid": "abcdef12-0000-0000-0000-000000000000",
         "name": "NewGroup",
         "path": "Work",
+        "json_output": False,
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
@@ -246,22 +247,25 @@ class TestEditCommand:
 # --- rm ---
 
 class TestRmCommand:
-    def test_uuid_with_yes_flag(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
-        mock_client.delete_entry.return_value = True
-        args = make_args(uuid="some-uuid", url=None, yes=True)
-        rc = rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
-        assert rc == 0
-        mock_client.delete_entry.assert_called_once_with("some-uuid")
-        assert "deleted" in capsys.readouterr().out.lower()
-
-    def test_url_single_match_deletes(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+    def test_url_single_match_auto_deletes(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
         entry = mock_entry(uuid="url-resolved-uuid")
         mock_client.get_logins.return_value = [entry]
         mock_client.delete_entry.return_value = True
-        args = make_args(uuid=None, url="https://example.com", yes=True)
+        args = make_args(url="https://example.com", uuid=None, yes=True)
         rc = rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 0
         mock_client.delete_entry.assert_called_once_with("url-resolved-uuid")
+        assert "deleted" in capsys.readouterr().out.lower()
+
+    def test_url_with_uuid_disambiguates(self, mock_client, cli_config, browser_config, browser_config_path, capsys, mock_entry):
+        e1 = mock_entry(uuid="uuid-1", login="alice")
+        e2 = mock_entry(uuid="uuid-2", login="bob")
+        mock_client.get_logins.return_value = [e1, e2]
+        mock_client.delete_entry.return_value = True
+        args = make_args(url="https://example.com", uuid="uuid-2", yes=True)
+        rc = rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        mock_client.delete_entry.assert_called_once_with("uuid-2")
 
     def test_url_multiple_matches_error(self, mock_client, cli_config, browser_config, browser_config_path, caplog, mock_entry):
         e1 = mock_entry(uuid="uuid-1", login="alice")
@@ -279,9 +283,19 @@ class TestRmCommand:
         assert rc == 1
         assert any("no entries" in r.message.lower() for r in caplog.records)
 
-    def test_failure_propagates(self, mock_client, cli_config, browser_config, browser_config_path):
+    def test_uuid_not_in_results_error(self, mock_client, cli_config, browser_config, browser_config_path, caplog, mock_entry):
+        entry = mock_entry(uuid="uuid-1")
+        mock_client.get_logins.return_value = [entry]
+        args = make_args(url="https://example.com", uuid="nonexistent-uuid", yes=True)
+        rc = rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 1
+        assert any("not found" in r.message.lower() for r in caplog.records)
+
+    def test_failure_propagates(self, mock_client, cli_config, browser_config, browser_config_path, mock_entry):
+        entry = mock_entry(uuid="some-uuid")
+        mock_client.get_logins.return_value = [entry]
         mock_client.delete_entry.side_effect = ProtocolError("access denied", error_code=6)
-        args = make_args(uuid="some-uuid", url=None, yes=True)
+        args = make_args(url="https://example.com", uuid=None, yes=True)
         with pytest.raises(ProtocolError):
             rm.run(mock_client, args, cli_config, browser_config, browser_config_path)
 

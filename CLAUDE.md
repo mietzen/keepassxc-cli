@@ -19,11 +19,11 @@ keepassxc_cli/
     ├── setup.py         # associate with KeePassXC
     ├── status.py        # show connection/association status
     ├── show.py          # show entries by URL
-    ├── add.py           # add new entry (--group path or --group-uuid)
-    ├── edit.py          # edit existing entry by URL (--uuid optional)
-    ├── rm.py            # delete entry by UUID or URL
+    ├── add.py           # add new entry: positional url/username, --group/--group-uuid optional
+    ├── edit.py          # edit existing entry: positional url, --uuid/--username/--password optional
+    ├── rm.py            # delete entry: positional url, --uuid optional for disambiguation
     ├── totp.py          # get TOTP code
-    ├── clip.py          # copy field to clipboard
+    ├── clip.py          # copy field to clipboard: positional url then field
     ├── lock.py          # lock database
     ├── mkdir.py         # create group
     ├── group_uuid.py    # look up a group UUID by path

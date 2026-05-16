@@ -7,12 +7,14 @@ from pathlib import Path
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+from keepassxc_cli.output import print_result
 
 logger = logging.getLogger(__name__)
 
 
-def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("lock", help="Lock the KeePassXC database")
+def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
+    parents = [fmt_parent] if fmt_parent else []
+    p = subparsers.add_parser("lock", parents=parents, help="Lock the KeePassXC database")
     p.set_defaults(func=run)
 
 
@@ -27,7 +29,7 @@ def run(
 ) -> int:
     success = client.lock_database()
     if success:
-        print("Database locked.")
+        print_result("Database locked.", fmt)
         return 0
     else:
         logger.error("Failed to lock database.")

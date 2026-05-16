@@ -12,14 +12,15 @@ from keepassxc_cli.output import ensure_scheme
 logger = logging.getLogger(__name__)
 
 
-def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("clip", help="Copy a field to clipboard")
+def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
+    parents = [fmt_parent] if fmt_parent else []
+    p = subparsers.add_parser("clip", parents=parents, help="Copy a field to clipboard")
+    p.add_argument("url", help="URL to look up")
     p.add_argument(
         "field",
         choices=["password", "username", "totp"],
         help="Field to copy: password, username, or totp",
     )
-    p.add_argument("url", help="URL to look up")
     p.set_defaults(func=run)
 
 

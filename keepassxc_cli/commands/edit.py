@@ -7,21 +7,23 @@ from pathlib import Path
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
-from keepassxc_cli.output import ensure_scheme
+from keepassxc_cli.output import ensure_scheme, print_result
 
 logger = logging.getLogger(__name__)
 
 
-def add_parser(subparsers: argparse._SubParsersAction) -> None:
+def add_parser(subparsers: argparse._SubParsersAction, fmt_parent: argparse.ArgumentParser | None = None) -> None:
+    parents = [fmt_parent] if fmt_parent else []
     p = subparsers.add_parser(
         "edit",
+        parents=parents,
         help="Edit an existing entry",
         description=(
-            "Edit an existing entry. Provide --url to look up the entry; omitted fields are\n"
-            "left unchanged. If the URL matches multiple entries, specify --uuid to disambiguate."
+            "Edit an existing entry by URL. Omitted fields are left unchanged.\n"
+            "If the URL matches multiple entries, specify --uuid to disambiguate."
         ),
     )
-    p.add_argument("--url", required=True, help="URL of the entry")
+    p.add_argument("url", help="URL of the entry")
     p.add_argument("--uuid", default=None, help="UUID of the entry (required when URL matches multiple entries)")
     p.add_argument("--username", default=None, help="New username")
     p.add_argument("--password", default=None, help="New password")
@@ -70,5 +72,5 @@ def run(
         uuid=entry.uuid,
         group_uuid=entry.group_uuid,
     )
-    print("Entry updated successfully.")
+    print_result("Entry updated.", fmt)
     return 0
