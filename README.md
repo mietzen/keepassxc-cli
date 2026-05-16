@@ -71,6 +71,8 @@ keepassxc-cli status -j
 
 ### Commands
 
+> **URL scheme**: All commands that accept a URL argument require a scheme (`https://` or `http://`). If you pass a bare hostname (e.g. `example.com`), the CLI will automatically prepend `https://` and emit a warning. KeePassXC derives the entry title from `QUrl(url).host()`, which returns an empty string for URLs without a scheme.
+
 #### `setup` — Associate with KeePassXC
 
 ```bash
@@ -115,8 +117,9 @@ keepassxc-cli clip totp     https://github.com
 # Password is prompted securely if --password is not given
 keepassxc-cli add --url https://example.com --username user@example.com
 keepassxc-cli add --url https://example.com --username user --password mypass
-# Place the entry in a specific group by UUID
+# Place the entry in a specific group by UUID or by path
 keepassxc-cli add --url https://example.com --username user --group-uuid <group-uuid>
+keepassxc-cli add --url https://example.com --username user --group "Work/Projects"
 ```
 
 > **Note**: The entry title is always derived from the URL hostname by KeePassXC. The protocol has no field to set a custom title.
@@ -124,19 +127,19 @@ keepassxc-cli add --url https://example.com --username user --group-uuid <group-
 #### `edit` — Edit an entry
 
 ```bash
-# Get the UUID first
-keepassxc-cli show https://github.com -p
-
-# Then edit — --url is required to resolve the current entry
-keepassxc-cli edit <uuid> --url https://github.com --username newuser
-keepassxc-cli edit <uuid> --url https://github.com --password newpass --title "New Title"
+# --url is required; --uuid is optional when the URL matches exactly one entry
+keepassxc-cli edit --url https://github.com --username newuser
+keepassxc-cli edit --url https://github.com --password newpass
+# Specify --uuid explicitly when the URL matches multiple entries
+keepassxc-cli edit --url https://github.com --uuid <uuid> --username newuser
 ```
 
 #### `rm` — Delete an entry
 
 ```bash
-keepassxc-cli rm <uuid>        # prompts for confirmation
-keepassxc-cli rm <uuid> --yes  # skip confirmation
+keepassxc-cli rm --uuid <uuid>        # prompts for confirmation
+keepassxc-cli rm --uuid <uuid> --yes  # skip confirmation
+keepassxc-cli rm --url https://example.com   # resolve by URL (errors if multiple matches)
 ```
 
 #### `lock` — Lock the database
