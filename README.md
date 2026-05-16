@@ -106,20 +106,20 @@ keepassxc-cli totp https://github.com -j
 #### `clip` — Copy a field to clipboard
 
 ```bash
-keepassxc-cli clip password https://github.com
-keepassxc-cli clip username https://github.com
-keepassxc-cli clip totp     https://github.com
+keepassxc-cli clip https://github.com password
+keepassxc-cli clip https://github.com username
+keepassxc-cli clip https://github.com totp
 ```
 
 #### `add` — Add a new entry
 
 ```bash
 # Password is prompted securely if --password is not given
-keepassxc-cli add --url https://example.com --username user@example.com
-keepassxc-cli add --url https://example.com --username user --password mypass
+keepassxc-cli add https://example.com user@example.com
+keepassxc-cli add https://example.com user --password mypass
 # Place the entry in a specific group by UUID or by path
-keepassxc-cli add --url https://example.com --username user --group-uuid <group-uuid>
-keepassxc-cli add --url https://example.com --username user --group "Work/Projects"
+keepassxc-cli add https://example.com user --group-uuid <group-uuid>
+keepassxc-cli add https://example.com user --group "Work/Projects"
 ```
 
 > **Note**: The entry title is always derived from the URL hostname by KeePassXC. The protocol has no field to set a custom title.
@@ -127,19 +127,20 @@ keepassxc-cli add --url https://example.com --username user --group "Work/Projec
 #### `edit` — Edit an entry
 
 ```bash
-# --url is required; --uuid is optional when the URL matches exactly one entry
-keepassxc-cli edit --url https://github.com --username newuser
-keepassxc-cli edit --url https://github.com --password newpass
+# URL is positional; --uuid is optional when the URL matches exactly one entry
+keepassxc-cli edit https://github.com --username newuser
+keepassxc-cli edit https://github.com --password newpass
 # Specify --uuid explicitly when the URL matches multiple entries
-keepassxc-cli edit --url https://github.com --uuid <uuid> --username newuser
+keepassxc-cli edit https://github.com --uuid <uuid> --username newuser
 ```
 
 #### `rm` — Delete an entry
 
 ```bash
-keepassxc-cli rm --uuid <uuid>        # prompts for confirmation
-keepassxc-cli rm --uuid <uuid> --yes  # skip confirmation
-keepassxc-cli rm --url https://example.com   # resolve by URL (errors if multiple matches)
+keepassxc-cli rm https://example.com         # prompts for confirmation
+keepassxc-cli rm https://example.com --yes   # skip confirmation
+# Specify --uuid when URL matches multiple entries
+keepassxc-cli rm https://example.com --uuid <uuid> --yes
 ```
 
 #### `lock` — Lock the database

@@ -75,6 +75,13 @@ def print_totp(totp: str, fmt: str = "table") -> None:
     print(totp)
 
 
+def print_result(message: str, fmt: str = "table") -> None:
+    if fmt == "json":
+        print(json.dumps({"status": "ok", "message": message}, indent=2))
+        return
+    print(message)
+
+
 def print_status(info: dict, fmt: str = "table") -> None:
     if fmt == "json":
         print(json.dumps(info, indent=2))
