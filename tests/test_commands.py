@@ -11,7 +11,7 @@ from keepassxc_browser_api import Entry, BrowserConfig, Association
 from keepassxc_browser_api.exceptions import ConnectionError, DatabaseLockedError, ProtocolError
 from keepassxc_cli.config import CliConfig
 from keepassxc_cli.commands import (
-    setup, status, show, add, edit, rm, totp, clip, lock, mkdir, group_uuid, version,
+    setup, status, show, add, edit, rm, totp, clip, lock, unlock, mkdir, group_uuid, version,
 )
 
 
@@ -477,6 +477,43 @@ class TestVersionCommand:
         assert rc == 0
         out = capsys.readouterr().out
         assert "unknown" in out
+
+    def test_json_output(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        import json
+        with patch("keepassxc_cli.commands.version.version", return_value="2.1.0"):
+            args = make_args()
+            rc = version.run(mock_client, args, cli_config, browser_config, browser_config_path, fmt="json")
+        assert rc == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data["version"] == "2.1.0"
+
+
+# --- unlock ---
+
+
+class TestUnlockCommand:
+    def test_success(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        mock_client.ensure_unlocked.return_value = None
+        args = make_args()
+        rc = unlock.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        mock_client.ensure_unlocked.assert_called_once()
+        assert "unlocked" in capsys.readouterr().out.lower()
+
+    def test_json_output(self, mock_client, cli_config, browser_config, browser_config_path, capsys):
+        import json
+        mock_client.ensure_unlocked.return_value = None
+        args = make_args()
+        rc = unlock.run(mock_client, args, cli_config, browser_config, browser_config_path, fmt="json")
+        assert rc == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data["status"] == "ok"
+
+    def test_database_locked_propagates(self, mock_client, cli_config, browser_config, browser_config_path):
+        mock_client.ensure_unlocked.side_effect = DatabaseLockedError("timed out")
+        args = make_args()
+        with pytest.raises(DatabaseLockedError):
+            unlock.run(mock_client, args, cli_config, browser_config, browser_config_path)
 
 
 # --- exit codes ---

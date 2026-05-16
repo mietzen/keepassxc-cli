@@ -110,6 +110,7 @@ keepassxc-cli clip https://github.com password
 keepassxc-cli clip https://github.com username
 keepassxc-cli clip https://github.com totp
 ```
+> **Note**: `clip` does not support `-j/--json` output — the field value is always copied silently to the clipboard.
 
 #### `add` — Add a new entry
 
@@ -147,7 +148,17 @@ keepassxc-cli rm https://example.com --uuid <uuid> --yes
 
 ```bash
 keepassxc-cli lock
+keepassxc-cli lock -j
 ```
+
+#### `unlock` — Unlock the database
+
+```bash
+keepassxc-cli unlock
+keepassxc-cli unlock -j
+```
+
+Triggers biometric (TouchID/fingerprint) unlock if configured. Raises an error if the unlock times out or KeePassXC is not running.
 
 #### `mkdir` — Create a group
 
@@ -181,6 +192,7 @@ JSON output (`-j`):
 
 ```bash
 keepassxc-cli version
+keepassxc-cli version -j
 ```
 
 Does not require a running KeePassXC instance.
@@ -256,6 +268,29 @@ pytest --cov=keepassxc_cli --cov-report=term-missing
 # Lint
 ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
 ```
+
+Verify with [manual tests](/tests/manual_test.md).
+
+---
+
+### Exit codes
+
+| Scenario | Expected code |
+|----------|---------------|
+| Any successful command | `0` |
+| Entry not found / generic error | `1` |
+| KeePassXC not running | `2` |
+| Unlock timed out | `3` |
+| Access denied by user | `4` |
+
+```bash
+keepassxc-cli show https://test.example.com; echo "exit: $?"    # 0
+keepassxc-cli show https://ghost.example.com; echo "exit: $?"   # 1
+# Quit KeePassXC, then:
+keepassxc-cli status; echo "exit: $?"                           # 2
+```
+
+---
 
 ## Known Limitations
 
