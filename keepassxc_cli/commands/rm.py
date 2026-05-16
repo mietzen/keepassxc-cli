@@ -7,6 +7,7 @@ from pathlib import Path
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+from keepassxc_cli.output import ensure_scheme
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ def run(
         target_uuid = args.uuid
         label = args.uuid
     else:
-        entries = client.get_logins(args.url)
+        entries = client.get_logins(ensure_scheme(args.url))
         if not entries:
             logger.error("No entries found for: %s", args.url)
             return 1

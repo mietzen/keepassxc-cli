@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from keepassxc_browser_api import Entry
 
 _KPH_PREFIX = "KPH: "
+
+logger = logging.getLogger(__name__)
+
+
+def ensure_scheme(url: str) -> str:
+    """Return url with a scheme. Prepends https:// with a warning if none is present."""
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+    logger.warning("URL %r has no scheme, assuming https://", url)
+    return "https://" + url
 
 
 def _strip_kph(key: str) -> str:

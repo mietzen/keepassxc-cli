@@ -13,19 +13,21 @@ keepassxc_cli/
 ├── __init__.py          # empty (just from __future__ import annotations)
 ├── __main__.py          # CLI entry point; argument parsing; dispatches to commands
 ├── config.py            # CliConfig dataclass; save/load ~/.keepassxc/cli.json
-├── output.py            # Output formatting: table, json
+├── output.py            # Output formatting: table, json; ensure_scheme() URL helper
 └── commands/
     ├── __init__.py      # empty
     ├── setup.py         # associate with KeePassXC
     ├── status.py        # show connection/association status
     ├── show.py          # show entries by URL
-    ├── add.py           # add new entry
-    ├── edit.py          # edit existing entry by UUID
-    ├── rm.py            # delete entry by UUID
+    ├── add.py           # add new entry (--group path or --group-uuid)
+    ├── edit.py          # edit existing entry by URL (--uuid optional)
+    ├── rm.py            # delete entry by UUID or URL
     ├── totp.py          # get TOTP code
     ├── clip.py          # copy field to clipboard
     ├── lock.py          # lock database
-    └── mkdir.py         # create group
+    ├── mkdir.py         # create group
+    ├── group_uuid.py    # look up a group UUID by path
+    └── version.py       # print installed package version
 
 tests/
 ├── conftest.py          # fixtures: mock_entry, mock_group, mock_browser_config, mock_client
@@ -109,6 +111,7 @@ ruff check --ignore=E501 --exclude=__init__.py ./keepassxc_cli
   | `4` | `ProtocolError(error_code=6 or 19)` — access denied by user |
 
 - **Config permissions**: Config files are written with `0o600` (owner read/write only).
+- **URL normalisation**: All URL-accepting command `run()` functions call `ensure_scheme(url)` (from `output.py`) before passing the URL to any `BrowserClient` method. This auto-prepends `https://` for bare hostnames (e.g. `example.com`) and emits a `logger.warning`. KeePassXC derives the entry title from `QUrl(url).host()`, which returns `""` for URLs without a scheme.
 - **Venv**: Always use `.venv` for development.
 - **Python ≥ 3.10** required.
 - **Password visibility**: `show` omits password and TOTP entirely when `-p` is not passed (no masking).

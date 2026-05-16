@@ -8,6 +8,7 @@ from pathlib import Path
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+from keepassxc_cli.output import ensure_scheme
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ def run(
     *,
     fmt: str = "table",
 ) -> int:
+    url = ensure_scheme(args.url)
     password = args.password
     if password is None:
         password = getpass.getpass("Password: ")
@@ -53,7 +55,7 @@ def run(
         group_uuid = matched.uuid
 
     client.set_login(
-        url=args.url,
+        url=url,
         username=args.username,
         password=password,
         group_uuid=group_uuid,

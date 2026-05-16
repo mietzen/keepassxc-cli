@@ -7,7 +7,7 @@ from pathlib import Path
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
-from keepassxc_cli.output import print_entry_detail
+from keepassxc_cli.output import ensure_scheme, print_entry_detail
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +30,10 @@ def run(
     *,
     fmt: str = "table",
 ) -> int:
-    entries = client.get_logins(args.url)
+    url = ensure_scheme(args.url)
+    entries = client.get_logins(url)
     if not entries:
-        logger.warning("No entries found for: %s", args.url)
+        logger.warning("No entries found for: %s", url)
         return 1
     for entry in entries:
         print_entry_detail(entry, fmt, show_password=args.show_password, show_kph_prefix=getattr(args, "show_kph_prefix", False))

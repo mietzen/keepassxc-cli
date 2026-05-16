@@ -7,6 +7,7 @@ from pathlib import Path
 from keepassxc_browser_api import BrowserClient, BrowserConfig
 
 from keepassxc_cli.config import CliConfig
+from keepassxc_cli.output import ensure_scheme
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def run(
         logger.error("pyperclip is required for clipboard support. Install it with: pip install pyperclip")
         return 1
 
-    entries = client.get_logins(args.url)
+    entries = client.get_logins(ensure_scheme(args.url))
     if not entries:
         logger.warning("No entries found for: %s", args.url)
         return 1

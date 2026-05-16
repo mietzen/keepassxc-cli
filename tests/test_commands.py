@@ -136,6 +136,15 @@ class TestShowCommand:
         assert rc == 1
         assert any("No entries" in r.message for r in caplog.records)
 
+    def test_url_no_scheme_prefixed(self, mock_client, cli_config, browser_config, browser_config_path, caplog, mock_entry):
+        entry = mock_entry()
+        mock_client.get_logins.return_value = [entry]
+        args = make_args(url="example.com", show_password=False)
+        rc = show.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        mock_client.get_logins.assert_called_once_with("https://example.com")
+        assert any("no scheme" in r.message.lower() for r in caplog.records)
+
 
 # --- add ---
 
@@ -168,6 +177,15 @@ class TestAddCommand:
         rc = add.run(mock_client, args, cli_config, browser_config, browser_config_path)
         assert rc == 1
         assert any("not found" in r.message.lower() for r in caplog.records)
+
+    def test_url_no_scheme_prefixed(self, mock_client, cli_config, browser_config, browser_config_path, caplog):
+        mock_client.set_login.return_value = True
+        args = make_args(url="example.com", username="u", password="p", group_uuid="", group=None)
+        rc = add.run(mock_client, args, cli_config, browser_config, browser_config_path)
+        assert rc == 0
+        call_kwargs = mock_client.set_login.call_args.kwargs
+        assert call_kwargs["url"] == "https://example.com"
+        assert any("no scheme" in r.message.lower() for r in caplog.records)
 
     def test_failure_propagates(self, mock_client, cli_config, browser_config, browser_config_path):
         mock_client.set_login.side_effect = ProtocolError("access denied", error_code=6)
